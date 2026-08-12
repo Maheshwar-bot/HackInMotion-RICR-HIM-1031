@@ -77,7 +77,6 @@ const verifySignup = async ({ email, otp }) => {
   return user;
 };
 
-
 // Login user with email and password
 const login = async ({ email, password }) => {
   const normalizedEmail = email.toLowerCase().trim();
@@ -119,7 +118,6 @@ const login = async ({ email, password }) => {
   };
 };
 
-
 // Get currently authenticated user
 const getCurrentUser = async (userId) => {
   // Find user without exposing password
@@ -132,10 +130,33 @@ const getCurrentUser = async (userId) => {
   return user;
 };
 
+// Reset user password
+const resetPassword = async ({ userId, newPassword }) => {
+  // Find user by authenticated reset-token user ID
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Hash new password using the same bcrypt setup
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  // Update password
+  user.password = passwordHash;
+
+  // Save updated password
+  await user.save();
+
+  return {
+    user,
+  };
+};
 
 module.exports = {
   signup,
   verifySignup,
   login,
   getCurrentUser,
+  resetPassword,
 };

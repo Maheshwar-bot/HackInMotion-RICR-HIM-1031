@@ -40,6 +40,12 @@ const otpSchema = new mongoose.Schema(
             type: Date,
             required: true,
         },
+
+        // Track last OTP send time for resend cooldown
+        lastSentAt: {
+            type: Date,
+            default: Date.now,
+        },
     },
     {
         timestamps: true,
