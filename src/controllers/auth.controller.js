@@ -1,5 +1,8 @@
 const authService = require("../services/auth.service");
 
+// OTP service for resend operations
+const otpService = require("../services/otp.service");
+
 // Handle signup request
 const signup = async (req, res) => {
   try {
@@ -148,9 +151,39 @@ const getMe = async (req, res) => {
   }
 };
 
+// Handle resend signup OTP request
+const resendSignupOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Generate and send new OTP
+    const result = await otpService.resendSignupOTP(email);
+
+    return res.status(200).json({
+      success: true,
+      message: "New OTP sent successfully",
+      email: result.email,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   signup,
   verifySignup,
   login,
   getMe,
+  resendSignupOTP,
 };
