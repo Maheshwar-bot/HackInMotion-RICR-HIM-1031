@@ -85,7 +85,46 @@ const verifySignup = async (req, res) => {
   }
 };
 
+// Handle login request
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Authenticate user
+    const result = await authService.login({
+      email,
+      password,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token: result.token,
+      user: {
+        id: result.user._id,
+        name: result.user.name,
+        email: result.user.email,
+        profileImage: result.user.profileImage,
+      },
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   signup,
   verifySignup,
+  login,
 };
