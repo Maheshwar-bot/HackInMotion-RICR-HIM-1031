@@ -123,8 +123,34 @@ const login = async (req, res) => {
   }
 };
 
+// Handle current user request
+const getMe = async (req, res) => {
+  try {
+    // Get authenticated user
+    const user = await authService.getCurrentUser(req.userId);
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+        authProvider: user.authProvider,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   signup,
   verifySignup,
   login,
+  getMe,
 };

@@ -120,8 +120,22 @@ const login = async ({ email, password }) => {
 };
 
 
+// Get currently authenticated user
+const getCurrentUser = async (userId) => {
+  // Find user without exposing password
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+};
+
+
 module.exports = {
   signup,
   verifySignup,
   login,
+  getCurrentUser,
 };
