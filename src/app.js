@@ -8,6 +8,9 @@ const authRoutes = require("./routes/auth.routes");
 // Medicine analysis routes
 const medicineRoutes = require("./routes/medicine.routes");
 
+// Search history routes
+const searchHistoryRoutes = require("./routes/searchHistory.routes");
+
 const app = express();
 
 // Basic security middleware
@@ -24,6 +27,9 @@ app.use("/api/auth", authRoutes);
 
 // Medicine analysis API routes
 app.use("/api/medicine", medicineRoutes);
+
+// Search history API routes
+app.use("/api/history", searchHistoryRoutes);
 
 // Backend health check
 app.get("/api/health", (req, res) => {

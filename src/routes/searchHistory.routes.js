@@ -1,18 +1,17 @@
 const express = require("express");
 
-const {
-  analyzeMedicine,
-} = require("../controllers/medicine.controller");
-
 const authMiddleware = require("../middleware/auth.middleware");
+const {
+  getSearchHistory,
+} = require("../controllers/searchHistory.controller");
 
 const router = express.Router();
 
-// Analyze two medicines - protected route
-router.post(
-  "/analyze",
+// Get logged-in user's search history
+router.get(
+  "/",
   authMiddleware,
-  analyzeMedicine
+  getSearchHistory
 );
 
 module.exports = router;

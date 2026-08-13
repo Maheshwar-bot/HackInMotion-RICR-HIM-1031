@@ -34,6 +34,15 @@ const getText = (value) => {
   return "";
 };
 
+// Remove duplicate text values
+const uniqueValues = (values) => {
+  return [...new Set(
+    values
+      .map((value) => getText(value))
+      .filter(Boolean)
+  )];
+};
+
 // Find useful sections inside DailyMed parsed JSON
 const findDailyMedSections = (data) => {
   const sections = [];
@@ -51,8 +60,13 @@ const findDailyMedSections = (data) => {
     }
 
     if (value.title || value.Title) {
-      const title = getText(value.title || value.Title);
-      const text = getText(value.text || value.Text);
+      const title = getText(
+        value.title || value.Title
+      );
+
+      const text = getText(
+        value.text || value.Text
+      );
 
       if (title && text) {
         sections.push({
@@ -147,7 +161,10 @@ const normalizeDailyMed = (dailymedData) => {
 
 // Normalize openFDA safety data
 const normalizeOpenFDA = (openfdaData) => {
-  if (!openfdaData?.found || !openfdaData?.records?.length) {
+  if (
+    !openfdaData?.found ||
+    !openfdaData?.records?.length
+  ) {
     return {
       found: false,
       warnings: [],
@@ -162,21 +179,75 @@ const normalizeOpenFDA = (openfdaData) => {
   return {
     found: true,
 
-    warnings: records
-      .map((record) => getText(record.warnings))
-      .filter(Boolean),
+    warnings: uniqueValues(
+      records.map((record) => record.warnings)
+    ),
 
-    contraindications: records
-      .map((record) => getText(record.contraindications))
-      .filter(Boolean),
+    contraindications: uniqueValues(
+      records.map(
+        (record) => record.contraindications
+      )
+    ),
 
-    adverseReactions: records
-      .map((record) => getText(record.adverse_reactions))
-      .filter(Boolean),
+    adverseReactions: uniqueValues(
+      records.map(
+        (record) => record.adverse_reactions
+      )
+    ),
 
-    drugInteractions: records
-      .map((record) => getText(record.drug_interactions))
-      .filter(Boolean),
+    drugInteractions: uniqueValues(
+      records.map(
+        (record) => record.drug_interactions
+      )
+    ),
+  };
+};
+
+// Build interaction evidence from retrieved medical data
+const buildInteractionEvidence = (
+  medicine1Data,
+  medicine2Data
+) => {
+  const medicine1Interactions =
+    medicine1Data?.safety?.drugInteractions || [];
+
+  const medicine2Interactions =
+    medicine2Data?.safety?.drugInteractions || [];
+
+  const medicine1Warnings =
+    medicine1Data?.safety?.warnings || [];
+
+  const medicine2Warnings =
+    medicine2Data?.safety?.warnings || [];
+
+  const medicine1Contraindications =
+    medicine1Data?.safety?.contraindications || [];
+
+  const medicine2Contraindications =
+    medicine2Data?.safety?.contraindications || [];
+
+  const available =
+    medicine1Interactions.length > 0 ||
+    medicine2Interactions.length > 0;
+
+  return {
+    available,
+
+    medicine1Interactions,
+
+    medicine2Interactions,
+
+    relevantWarnings: [
+      ...medicine1Warnings,
+      ...medicine2Warnings,
+    ],
+
+    relevantContraindications: [
+      ...medicine1Contraindications,
+      ...medicine2Contraindications,
+    ],
+
+    evidenceSource: "openFDA",
   };
 };
 
@@ -190,7 +261,9 @@ const getMedicineData = async (medicineName) => {
 
   // Identify medicine using RxNorm
   const rxnormData =
-    await rxnormService.findMedicine(normalizedName);
+    await rxnormService.findMedicine(
+      normalizedName
+    );
 
   // Get drug information from DailyMed using RxCUI
   const dailymedData =
@@ -202,7 +275,8 @@ const getMedicineData = async (medicineName) => {
   // Get safety data from openFDA
   const openfdaData =
     await openfdaService.getSafetyData(
-      normalizedName
+      normalizedName,
+      rxnormData
     );
 
   // Normalize DailyMed data
@@ -230,25 +304,39 @@ const analyzeMedicine = async (
 ) => {
   // Validate first medicine
   if (!medicineName1 || !medicineName1.trim()) {
-    throw new Error("First medicine name is required");
+    throw new Error(
+      "First medicine name is required"
+    );
   }
 
   // Validate second medicine
   if (!medicineName2 || !medicineName2.trim()) {
-    throw new Error("Second medicine name is required");
+    throw new Error(
+      "Second medicine name is required"
+    );
   }
 
   // Get complete data for both medicines
-  const [medicine1Data, medicine2Data] =
-    await Promise.all([
-      getMedicineData(medicineName1),
-      getMedicineData(medicineName2),
-    ]);
+  const [
+    medicine1Data,
+    medicine2Data,
+  ] = await Promise.all([
+    getMedicineData(medicineName1),
+    getMedicineData(medicineName2),
+  ]);
+
+  // Build interaction evidence
+  const interactionEvidence =
+    buildInteractionEvidence(
+      medicine1Data,
+      medicine2Data
+    );
 
   // Combine trusted medical data
   const combinedMedicineData = {
     medicine1: medicine1Data,
     medicine2: medicine2Data,
+    interactionEvidence,
   };
 
   // Ask AI to analyze the combination
@@ -261,6 +349,7 @@ const analyzeMedicine = async (
   return {
     medicine1: medicine1Data,
     medicine2: medicine2Data,
+    interactionEvidence,
     interactionAnalysis: aiAnalysis,
   };
 };
