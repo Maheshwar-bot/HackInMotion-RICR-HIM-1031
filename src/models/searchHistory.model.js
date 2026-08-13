@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const searchHistorySchema = new mongoose.Schema(
   {
-    // --------------------------------------------------
+    // ==================================================
     // User
-    // --------------------------------------------------
+    // ==================================================
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -13,37 +13,44 @@ const searchHistorySchema = new mongoose.Schema(
       index: true,
     },
 
-    // --------------------------------------------------
+    // ==================================================
     // Medicines
-    // --------------------------------------------------
+    // ==================================================
 
+    // First medicine
     medicine1: {
       type: String,
       trim: true,
       default: null,
     },
 
+    // Second medicine
+    // Optional for prescription analysis
     medicine2: {
       type: String,
       trim: true,
       default: null,
     },
 
-    // --------------------------------------------------
-    // Analysis source
-    // --------------------------------------------------
+    // ==================================================
+    // Analysis Source
+    // ==================================================
 
     source: {
       type: String,
-      enum: ["manual", "prescription"],
+      enum: [
+        "manual",
+        "prescription",
+      ],
       default: "manual",
       index: true,
     },
 
-    // --------------------------------------------------
-    // Prescription reference
-    // --------------------------------------------------
+    // ==================================================
+    // Prescription Reference
+    // ==================================================
 
+    // Filled only when source = prescription
     prescriptionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Prescription",
@@ -51,9 +58,9 @@ const searchHistorySchema = new mongoose.Schema(
       index: true,
     },
 
-    // --------------------------------------------------
-    // Risk level
-    // --------------------------------------------------
+    // ==================================================
+    // Risk Level
+    // ==================================================
 
     riskLevel: {
       type: String,
@@ -67,13 +74,16 @@ const searchHistorySchema = new mongoose.Schema(
       default: "Unable to determine",
     },
 
-    // --------------------------------------------------
-    // Response mode
-    // --------------------------------------------------
+    // ==================================================
+    // Response Mode
+    // ==================================================
 
     mode: {
       type: String,
-      enum: ["normal", "expert"],
+      enum: [
+        "normal",
+        "expert",
+      ],
       default: "normal",
     },
   },
