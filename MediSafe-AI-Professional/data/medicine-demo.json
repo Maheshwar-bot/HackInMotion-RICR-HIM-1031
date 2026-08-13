@@ -1,0 +1,8 @@
+[
+  {"name":"Paracetamol","generic":"Paracetamol / Acetaminophen","category":"Pain / Fever"},
+  {"name":"Metformin","generic":"Metformin hydrochloride","category":"Diabetes"},
+  {"name":"Amlodipine","generic":"Amlodipine","category":"Blood pressure"},
+  {"name":"Cetirizine","generic":"Cetirizine hydrochloride","category":"Allergy"},
+  {"name":"Amoxicillin","generic":"Amoxicillin","category":"Antibiotic"},
+  {"name":"Ibuprofen","generic":"Ibuprofen","category":"Pain / Inflammation"}
+]
