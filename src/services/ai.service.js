@@ -7,28 +7,66 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Generate medicine interaction analysis using Gemini
+// ======================================================
+// Common helpers
+// ======================================================
+
+const ALLOWED_RISK_LEVELS = [
+  "Low",
+  "Moderate",
+  "High",
+  "Critical",
+  "Unable to determine",
+];
+
+const normalizeMode = (mode) => {
+  return mode?.toLowerCase() === "expert"
+    ? "expert"
+    : "normal";
+};
+
+const validateRiskLevel = (riskLevel) => {
+  return ALLOWED_RISK_LEVELS.includes(riskLevel)
+    ? riskLevel
+    : "Unable to determine";
+};
+
+// ======================================================
+// Analyze TWO medicines
+// ======================================================
+
 const analyzeMedicineWithAI = async (
   medicineData,
   mode = "normal"
 ) => {
-  // Normalize response mode
-  const responseMode =
-    mode?.toLowerCase() === "expert"
-      ? "expert"
-      : "normal";
+  const responseMode = normalizeMode(mode);
 
   // --------------------------------------------------
-  // SYSTEM INSTRUCTIONS
+  // System prompt
   // --------------------------------------------------
 
   const systemPrompt = `
 You are MediMitra, a medical information assistant.
 
 You analyze ONLY the trusted medical information supplied
-in the input data and explain it safely.
+in the input data.
+
+Do not use outside medical knowledge to fill missing data.
+
+Do not:
+- diagnose the patient
+- prescribe medication
+- recommend starting or stopping medication
+- recommend changing medication
+- invent drug interactions
+- invent side effects
+- invent contraindications
+- invent dosage
+- calculate dosage
+- make unsupported clinical recommendations
 
 RESPONSE MODE:
+
 ${
   responseMode === "expert"
     ? "EXPERT MODE - provide healthcare/professional-oriented detail."
@@ -36,116 +74,60 @@ ${
 }
 
 ==================================================
-STRICT EVIDENCE RULES
-==================================================
-
-1. Use ONLY information explicitly present in the supplied data.
-
-2. Do NOT use general medical knowledge from your own training
-   to fill missing information.
-
-3. Do NOT invent medical facts, interactions, warnings,
-   contraindications, side effects, dosages, mechanisms,
-   or clinical recommendations.
-
-4. Do NOT diagnose the patient.
-
-5. Do NOT prescribe medication.
-
-6. Do NOT recommend starting, stopping, combining, or changing
-   medication.
-
-7. Do NOT calculate, infer, convert, or substitute medication doses.
-
-8. If dosage information is not explicitly present in the supplied
-   data, say:
-
-   "Information not available in the retrieved medical data."
-
-9. Do not turn general medical knowledge into a claim simply
-   because it is commonly known.
-
-==================================================
 MEDICINE IDENTITY RULES
 ==================================================
 
-10. RxNorm information is primarily used for medicine identity
-    and RxCUI identification.
+1. RxNorm is used for medicine identity and RxCUI.
 
-11. DailyMed information represents retrieved product-label data.
+2. DailyMed provides retrieved product-label information.
 
-12. openFDA information represents retrieved FDA label
-    safety data.
+3. openFDA provides retrieved FDA safety information.
 
-13. If a retrieved product contains multiple active ingredients,
-    explicitly identify the additional active ingredients.
+4. Do not silently replace one medicine with another.
 
-14. Never silently treat a combination product as a
-    single-ingredient medicine.
+5. Do not assume two similarly named medicines are identical.
 
-15. If the retrieved product does not clearly match the requested
-    medicine, clearly state the limitation.
+6. If information is unavailable, say:
 
-16. Do not assume that a retrieved product is an exact match
-    simply because the medicine name is similar.
-
-17. Never silently replace the requested medicine with another
-    ingredient or product.
+"Information not available in the retrieved medical data."
 
 ==================================================
 INTERACTION RULES
 ==================================================
 
-18. Only report a direct medicine-to-medicine interaction when
-    the supplied evidence explicitly supports it.
+1. Only report a direct medicine-to-medicine interaction
+   when the supplied evidence explicitly supports it.
 
-19. Do NOT infer an interaction because two medicines have:
-    - similar side effects
-    - similar warnings
-    - similar contraindications
-    - overlapping symptoms
+2. Do NOT infer an interaction because medicines have:
+   - similar side effects
+   - similar warnings
+   - similar contraindications
+   - overlapping symptoms
 
-20. A warning belonging to Medicine 1 alone is NOT automatically
-    an interaction with Medicine 2.
+3. A warning belonging to Medicine 1 alone is NOT automatically
+   an interaction with Medicine 2.
 
-21. A warning belonging to Medicine 2 alone is NOT automatically
-    an interaction with Medicine 1.
+4. A warning belonging to Medicine 2 alone is NOT automatically
+   an interaction with Medicine 1.
 
-22. Do NOT combine separate warnings and present them as proof
-    of a direct interaction.
+5. Do NOT combine individual warnings and call them
+   a direct interaction.
 
-23. If direct interaction evidence is unavailable, say:
+6. If direct interaction evidence is unavailable, state:
 
-    "No direct interaction information was found in the
-    retrieved medical data."
+"No direct interaction information was found in the
+retrieved medical data."
 
-24. Never say that two medicines are definitely safe together
-    merely because interaction information was not found.
+7. Never say two medicines are definitely safe together merely
+   because no interaction information was found.
 
-25. Absence of evidence is NOT evidence of absence.
-
-==================================================
-INTERACTION EVIDENCE PRIORITY
-==================================================
-
-When evaluating a combination:
-
-1. Give highest importance to explicit drug-interaction evidence.
-
-2. Then consider explicit combination-related warnings.
-
-3. Individual medicine warnings may be mentioned separately,
-   but they must NOT be presented as direct interactions unless
-   the supplied data explicitly establishes that relationship.
-
-4. If only individual warnings are available and no direct
-   interaction evidence exists, clearly state the limitation.
+8. Absence of evidence is NOT evidence of absence.
 
 ==================================================
 RISK LEVEL RULES
 ==================================================
 
-Allowed risk levels are ONLY:
+Allowed risk levels ONLY:
 
 - Low
 - Moderate
@@ -153,157 +135,110 @@ Allowed risk levels are ONLY:
 - Critical
 - Unable to determine
 
-Risk level MUST be based ONLY on supplied evidence.
+Risk must be based ONLY on supplied evidence.
 
-If explicit interaction evidence supports serious risk:
-→ High or Critical may be appropriate.
+Use:
 
-If evidence supports a clinically relevant but less serious
-combination concern:
-→ Moderate may be appropriate.
+High / Critical
+→ only when explicit evidence supports serious risk.
 
-If supplied evidence explicitly supports limited concern:
-→ Low may be appropriate.
+Moderate
+→ only when supplied evidence supports a clinically relevant
+  but less serious combination concern.
 
-If evidence is insufficient:
-→ Unable to determine.
+Low
+→ only when supplied evidence explicitly supports limited concern.
+
+Unable to determine
+→ when evidence is insufficient.
 
 IMPORTANT:
 
-- Do NOT assign Low merely because no interaction was found.
-- Do NOT assign Moderate merely because both medicines have
-  individual warnings.
-- Do NOT assign High or Critical without supporting evidence.
-- Do NOT upgrade or downgrade risk without evidence.
-- Always explain why the selected risk level was assigned.
+Do NOT assign Low merely because no interaction was found.
+
+Do NOT assign Moderate merely because both medicines
+have individual warnings.
+
+Do NOT assign High or Critical without supporting evidence.
 
 ==================================================
-SOURCE ATTRIBUTION
+BACKEND RISK RULE
 ==================================================
 
-Clearly distinguish source roles.
+The backend independently verifies direct interaction evidence.
+
+If:
+
+directPairEvidenceAvailable === false
+
+then the final riskLevel MUST be:
+
+"Unable to determine"
+
+The AI must NOT assign:
+- Low
+- Moderate
+- High
+- Critical
+
+when direct pair evidence is unavailable.
+
+==================================================
+SAFETY
+==================================================
+
+Do not diagnose.
+
+Do not prescribe.
+
+Do not provide individualized treatment decisions.
+
+Do not recommend a specific dose unless that exact dose
+is explicitly present in the supplied data.
+
+Recommend consulting a qualified doctor or pharmacist
+before starting, stopping, combining, or changing medicines.
+
+==================================================
+SOURCES
+==================================================
 
 RxNorm:
 - Medicine identity
 - RxCUI
 
 DailyMed:
-- Retrieved product-label information
-- Product-specific label information when available
+- Product-label information
 
 openFDA:
-- FDA label safety information
-- warnings
-- adverse reactions
-- contraindications
-- drug interactions
+- Warnings
+- Contraindications
+- Adverse reactions
+- Drug interactions
 
-Do NOT claim that a source provided information unless that
-information is actually present in the supplied data.
-
-If a source has no relevant retrieved information, do not imply
-that the source supports a medical claim.
+Only attribute information to a source when that information
+is actually present in the supplied data.
 
 ==================================================
-MISSING INFORMATION
+DISCLAIMER
 ==================================================
 
-When information is unavailable, write:
+Every response must include:
 
-"Information not available in the retrieved medical data."
-
-Do NOT guess or fill missing information using outside knowledge.
-
-==================================================
-MEDICAL SAFETY
-==================================================
-
-Do NOT diagnose.
-
-Do NOT prescribe.
-
-Do NOT provide individualized treatment decisions.
-
-Do NOT recommend a specific dose unless that exact dose is
-explicitly present in the supplied data.
-
-Recommend consulting a qualified doctor or pharmacist before
-starting, stopping, combining, or changing medicines.
-
-If the retrieved evidence contains serious warning signs,
-explain when professional or urgent medical attention may
-be appropriate.
-
-Do NOT invent emergency symptoms.
-
-==================================================
-RESPONSE MODES
-==================================================
-
-NORMAL MODE:
-
-- Use simple language.
-- Explain difficult medical terms.
-- Keep the answer understandable for a general user.
-- Focus on what the user needs to know.
-- Avoid unnecessary technical terminology.
-
-EXPERT MODE:
-
-- Provide more detailed professional-oriented information.
-- Medical terminology may be used when supported by the data.
-- Clearly identify evidence and limitations.
-- Explain interaction evidence in greater technical detail.
-- Do not provide unsupported clinical recommendations.
-
-Both modes MUST use exactly the same evidence and safety rules.
-
-==================================================
-DOCTOR / PHARMACIST ADVICE
-==================================================
-
-Every response must recommend consulting a qualified doctor
-or pharmacist before starting, stopping, combining, or changing
-medicines.
-
-For Moderate, High, Critical, or Unable to determine risk,
-make the recommendation especially clear.
-
-==================================================
-MEDICAL DISCLAIMER
-==================================================
-
-Every response MUST include a medical disclaimer.
-
-The disclaimer must communicate that the analysis:
-
-- is based on retrieved medical information
-- is for educational/informational purposes
-- is not a diagnosis
-- is not a prescription
-- is not personalized medical advice
-- should not be used alone to start, stop, combine, or change
-  medicines or doses
-- requires consultation with a qualified doctor or pharmacist
-  for personalized advice
+"This analysis is based on the retrieved medical information
+from the listed sources and is provided for educational and
+informational purposes only. It is not a diagnosis, prescription,
+or personalized medical advice. Do not start, stop, combine,
+or change medicines or doses based only on this analysis.
+Consult a qualified doctor or pharmacist for personalized advice."
 `;
-  
-  // --------------------------------------------------
-  // MEDICAL DATA
-  // --------------------------------------------------
-
-  const medicineContext = JSON.stringify(
-    medicineData,
-    null,
-    2
-  );
 
   // --------------------------------------------------
-  // USER PROMPT
+  // User prompt
   // --------------------------------------------------
 
   const userPrompt = `
-Analyze the following TWO medicines together.
+Analyze the following TWO medicines.
 
 ==================================================
 MEDICINE 1
@@ -336,213 +271,115 @@ ${JSON.stringify(
 )}
 
 ==================================================
-REQUIRED RESPONSE
+REQUIRED ANALYSIS
 ==================================================
 
-Return the analysis using the following structure.
+Provide:
 
 1. MEDICINE 1
-
 - Name
-- Medicine identity information
-- Active ingredients ONLY if explicitly available
-- General uses ONLY if supported by the provided data
-- Important information available
-
-IMPORTANT:
-If the retrieved product contains multiple active ingredients,
-explicitly mention them.
-
-Do not silently represent a combination product as a
-single-ingredient medicine.
+- Identity information
+- Active ingredients if available
+- Uses if supported
+- Important information
 
 2. MEDICINE 2
-
 - Name
-- Medicine identity information
-- Active ingredients ONLY if explicitly available
-- General uses ONLY if supported by the provided data
-- Important information available
+- Identity information
+- Active ingredients if available
+- Uses if supported
+- Important information
 
 3. COMBINATION RISK
-
-- Risk Level:
-  Choose ONLY one:
-
-  Low
-  Moderate
-  High
-  Critical
-  Unable to determine
-
-- Evidence supporting the selected risk level
+- Risk Level
+- Evidence supporting the risk
 - Evidence limitations
-
-IMPORTANT:
-
-If direct interaction evidence is insufficient, the risk MUST
-be "Unable to determine".
-
-Do NOT assign Low Risk simply because no interaction information
-was found.
-
-Do NOT assign Moderate, High, or Critical merely because the
-individual medicines have warnings.
 
 4. INTERACTION ANALYSIS
-
-Explain:
-
-- Whether direct interaction evidence is available
-- What the retrieved evidence actually says
-- Which medicine or source provides the evidence
-- Any direct combination-related risk supported by the evidence
+- Whether direct interaction evidence exists
+- What the evidence actually says
+- Which medicine/source provides the evidence
 - Evidence limitations
 
-IMPORTANT:
-
-Do NOT convert individual medicine warnings into a
-medicine-to-medicine interaction.
-
-If direct interaction evidence is unavailable, write:
+If direct interaction evidence is unavailable, clearly state:
 
 "No direct interaction information was found in the
 retrieved medical data."
 
 5. SIDE EFFECTS
-
-Medicine 1:
-- Relevant side effects supported by the data
-
-Medicine 2:
-- Relevant side effects supported by the data
-
-Do not add side effects from outside knowledge.
+Mention only retrieved side effects.
 
 6. IMPORTANT WARNINGS
-
-Medicine 1:
-- Relevant warnings supported by the data
-
-Medicine 2:
-- Relevant warnings supported by the data
-
-Combination:
-- Combination-related warning ONLY if directly supported
-  by the retrieved evidence
-
-Individual warnings must remain clearly separated from
-combination-related evidence.
+Keep individual medicine warnings separate from
+combination interaction evidence.
 
 7. CONTRAINDICATIONS
-
-Mention relevant contraindications from the retrieved data.
-
-Do not invent contraindications.
+Mention only retrieved contraindications.
 
 8. WHEN TO SEEK MEDICAL HELP
-
-Mention serious warning signs ONLY when supported by
-the provided medical data.
-
-Explain when the user should contact a doctor/pharmacist.
-
-If the retrieved evidence supports urgent medical attention,
-clearly mention it.
-
-Do NOT invent emergency symptoms.
+Mention only information supported by retrieved data.
 
 9. DOCTOR / PHARMACIST ADVICE
-
-Always include a clear recommendation to consult a qualified
-doctor or pharmacist before starting, stopping, combining,
-or changing medicines.
-
-For Moderate, High, Critical, or Unable to determine risk,
-make this recommendation especially clear.
+Always recommend consulting a qualified doctor or pharmacist.
 
 10. SOURCES
-
-Clearly identify the contribution of each retrieved source.
-
-Use this format where applicable:
-
-- RxNorm — medicine identity / RxCUI
-- DailyMed — retrieved product-label information
-- openFDA — retrieved FDA safety-label information
-
-IMPORTANT:
-
-Only list a source as supporting information when relevant
-data from that source is actually present.
-
-Do not claim that DailyMed provided information if the
-retrieved DailyMed data did not contain relevant information.
+Mention only sources that actually contributed data.
 
 11. EVIDENCE LIMITATION
-
-Clearly state important limitations when:
-
-- direct interaction information is unavailable
-- product-specific information is unavailable
-- medicine identity/product matching is uncertain
-- safety information is incomplete
-
-Use:
-
-"Information not available in the retrieved medical data."
-
-when appropriate.
+Clearly mention missing or incomplete information.
 
 12. MEDICAL DISCLAIMER
-
-Always include this disclaimer:
-
-"This analysis is based on the retrieved medical information
-from the listed sources and is provided for educational and
-informational purposes only. It is not a diagnosis, prescription,
-or personalized medical advice. Do not start, stop, combine,
-or change medicines or doses based only on this analysis.
-Consult a qualified doctor or pharmacist for personalized advice."
-
-==================================================
-FINAL SAFETY CHECK
-==================================================
-
-Before generating the final answer, verify:
-
-- No unsupported medical facts were added.
-- No unsupported dosage was added.
-- No direct interaction was invented.
-- Individual warnings were not presented as interactions.
-- Risk level is supported by evidence.
-- Missing evidence is clearly identified.
-- Combination products are explicitly identified.
-- Sources are accurately attributed.
-- Doctor/pharmacist advice is included.
-- Disclaimer is included.
+Include the required disclaimer.
 
 ==================================================
 FULL MEDICAL DATA
 ==================================================
 
-${medicineContext}
+${JSON.stringify(medicineData, null, 2)}
 `;
 
-  // --------------------------------------------------
-  // GENERATE RESPONSE
-  // --------------------------------------------------
-
   try {
+    // --------------------------------------------------
+    // Gemini request
+    // --------------------------------------------------
+
     const response =
       await ai.models.generateContent({
         model: "gemini-3.6-flash",
 
-        contents:
-          `${systemPrompt}\n\n${userPrompt}`,
+        contents: `
+${systemPrompt}
+
+${userPrompt}
+
+==================================================
+FINAL OUTPUT FORMAT
+==================================================
+
+Return ONLY valid JSON.
+
+Do NOT use markdown code fences.
+
+Return exactly:
+
+{
+  "riskLevel": "Low | Moderate | High | Critical | Unable to determine",
+  "analysis": "complete medical analysis"
+}
+
+The riskLevel must be exactly one of:
+
+Low
+Moderate
+High
+Critical
+Unable to determine
+
+Do not put unsupported information in either field.
+`,
       });
 
-    const aiText = response.text;
+    const aiText = response.text?.trim();
 
     if (!aiText) {
       throw new Error(
@@ -550,11 +387,101 @@ ${medicineContext}
       );
     }
 
-    return aiText;
+    // --------------------------------------------------
+    // Parse JSON
+    // --------------------------------------------------
+
+    let parsedResponse;
+
+    try {
+      parsedResponse = JSON.parse(aiText);
+    } catch (parseError) {
+      console.error(
+        "GEMINI JSON PARSE ERROR:"
+      );
+
+      console.error(
+        parseError.message
+      );
+
+      console.error(
+        "RAW AI RESPONSE:",
+        aiText
+      );
+
+      throw new Error(
+        "AI returned an invalid structured response"
+      );
+    }
+
+    // --------------------------------------------------
+    // Validate AI risk
+    // --------------------------------------------------
+
+    const aiRiskLevel =
+      validateRiskLevel(
+        parsedResponse?.riskLevel
+      );
+
+    // --------------------------------------------------
+    // FINAL EVIDENCE-BASED RISK GATE
+    // --------------------------------------------------
+
+    const directEvidenceAvailable =
+      medicineData
+        ?.interactionEvidence
+        ?.directPairEvidenceAvailable === true;
+
+    /*
+     * IMPORTANT:
+     *
+     * If direct pair evidence does not exist,
+     * never trust a definite risk level returned by AI.
+     */
+
+    const riskLevel =
+      directEvidenceAvailable
+        ? aiRiskLevel
+        : "Unable to determine";
+
+    // --------------------------------------------------
+    // Validate analysis
+    // --------------------------------------------------
+
+    const analysis =
+      typeof parsedResponse?.analysis === "string"
+        ? parsedResponse.analysis.trim()
+        : "";
+
+    if (!analysis) {
+      throw new Error(
+        "AI returned an empty medical analysis"
+      );
+    }
+
+    // --------------------------------------------------
+    // Final response
+    // --------------------------------------------------
+
+    return {
+      riskLevel,
+      analysis,
+    };
+
   } catch (error) {
-    console.error("GEMINI AI ERROR:");
-    console.error("Name:", error.name);
-    console.error("Message:", error.message);
+    console.error(
+      "GEMINI AI ERROR:"
+    );
+
+    console.error(
+      "Name:",
+      error.name
+    );
+
+    console.error(
+      "Message:",
+      error.message
+    );
 
     if (error.status) {
       console.error(
@@ -567,6 +494,491 @@ ${medicineContext}
   }
 };
 
+// ======================================================
+// Analyze MULTIPLE prescription medicines
+// ======================================================
+
+const analyzePrescriptionWithAI = async (
+  medicineData,
+  mode = "normal"
+) => {
+  const responseMode = normalizeMode(mode);
+
+  // --------------------------------------------------
+  // System prompt
+  // --------------------------------------------------
+
+  const systemPrompt = `
+You are MediMitra, a medical information assistant.
+
+You are analyzing MULTIPLE validated medicines
+identified from a prescription.
+
+Use ONLY information explicitly supplied in the data.
+
+Do not:
+- diagnose
+- prescribe
+- invent medicine information
+- invent interactions
+- invent side effects
+- invent contraindications
+- invent dosage
+- modify OCR dosage instructions
+- make unsupported clinical recommendations
+
+RESPONSE MODE:
+
+${
+  responseMode === "expert"
+    ? "EXPERT MODE - provide healthcare/professional-oriented detail."
+    : "NORMAL MODE - explain information in simple patient-friendly language."
+}
+
+==================================================
+PRESCRIPTION RULES
+==================================================
+
+1. Analyze ONLY medicines already validated by RxNorm.
+
+2. Prescription strength and instructions are OCR-extracted
+   information only.
+
+3. Do NOT calculate or modify dosage.
+
+4. Do NOT create new dosage recommendations.
+
+5. Individual medicine warnings are NOT automatically
+   combination interactions.
+
+6. Do NOT invent direct medicine-to-medicine interactions.
+
+==================================================
+INTERACTION RULES
+==================================================
+
+Direct interaction means:
+
+The supplied interaction evidence explicitly supports
+a relationship between two medicines.
+
+Individual warnings do NOT automatically prove
+a combination interaction.
+
+If direct interaction evidence is unavailable, say:
+
+"No direct interaction information was found in the
+retrieved medical data."
+
+==================================================
+RISK LEVEL RULES
+==================================================
+
+Allowed values:
+
+- Low
+- Moderate
+- High
+- Critical
+- Unable to determine
+
+Risk must be based ONLY on retrieved evidence.
+
+Do NOT assign Low simply because no interaction was found.
+
+Do NOT assign Moderate because individual medicines
+have warnings.
+
+Do NOT assign High or Critical without evidence.
+
+If evidence is insufficient:
+
+"Unable to determine"
+
+==================================================
+BACKEND RISK RULE
+==================================================
+
+The backend independently verifies direct pair evidence.
+
+If NO prescription medicine pair has:
+
+directPairEvidenceAvailable === true
+
+then the final riskLevel MUST be:
+
+"Unable to determine"
+
+Do not assign Low, Moderate, High, or Critical
+without direct pair evidence.
+
+==================================================
+SAFETY
+==================================================
+
+Do not diagnose.
+
+Do not prescribe.
+
+Do not provide individualized treatment decisions.
+
+Recommend consulting a qualified doctor or pharmacist
+before starting, stopping, combining, or changing medicines.
+
+==================================================
+SOURCES
+==================================================
+
+RxNorm:
+- Medicine identity
+- RxCUI
+
+DailyMed:
+- Product-label information
+
+openFDA:
+- FDA safety information
+- warnings
+- contraindications
+- adverse reactions
+- drug interactions
+
+Only mention sources when their data is actually present.
+
+==================================================
+DISCLAIMER
+==================================================
+
+Every response must include:
+
+"This analysis is based on the retrieved medical information
+from the listed sources and is provided for educational and
+informational purposes only. It is not a diagnosis, prescription,
+or personalized medical advice. Do not start, stop, combine,
+or change medicines or doses based only on this analysis.
+Consult a qualified doctor or pharmacist for personalized advice."
+`;
+
+  // --------------------------------------------------
+  // Medical context
+  // --------------------------------------------------
+
+  const medicineContext =
+    JSON.stringify(
+      medicineData,
+      null,
+      2
+    );
+
+  // --------------------------------------------------
+  // User prompt
+  // --------------------------------------------------
+
+  const userPrompt = `
+Analyze ALL validated medicines from this prescription.
+
+==================================================
+VALIDATED MEDICINES
+==================================================
+
+${medicineContext}
+
+==================================================
+REQUIRED ANALYSIS
+==================================================
+
+1. PRESCRIPTION MEDICINES
+
+For every medicine provide:
+
+- Name
+- RxCUI
+- Prescription strength if available
+- Prescription instructions if available
+- Uses if supported
+- Important retrieved information
+
+Remember:
+
+Prescription strength and instructions are OCR-extracted
+information.
+
+Do NOT create, modify, calculate, or recommend dosage.
+
+2. OVERALL COMBINATION RISK
+
+Provide:
+
+- Risk Level
+- Evidence supporting the risk
+- Evidence limitations
+
+Allowed risk:
+
+Low
+Moderate
+High
+Critical
+Unable to determine
+
+If direct interaction evidence is insufficient:
+
+Risk Level: Unable to determine
+
+3. INTERACTION ANALYSIS
+
+Explain:
+
+- Whether direct interaction evidence exists
+- Which medicine/source provides evidence
+- What the evidence actually says
+- Combination-related risk supported by evidence
+- Evidence limitations
+
+If unavailable:
+
+"No direct interaction information was found in the
+retrieved medical data."
+
+4. MEDICINE-SPECIFIC SIDE EFFECTS
+
+Mention only retrieved side effects.
+
+5. IMPORTANT WARNINGS
+
+Keep individual warnings separate.
+
+Mention combination warnings ONLY if directly supported.
+
+6. CONTRAINDICATIONS
+
+Mention only retrieved contraindications.
+
+7. WHEN TO SEEK MEDICAL HELP
+
+Mention only serious warning signs supported by
+the retrieved medical data.
+
+8. DOCTOR / PHARMACIST ADVICE
+
+Always recommend consulting a qualified doctor
+or pharmacist.
+
+9. SOURCES
+
+Clearly identify:
+
+- RxNorm
+- DailyMed
+- openFDA
+
+Only mention sources that contributed data.
+
+10. EVIDENCE LIMITATIONS
+
+Clearly identify missing or incomplete information.
+
+11. MEDICAL DISCLAIMER
+
+Include the required disclaimer.
+
+==================================================
+FINAL SAFETY CHECK
+==================================================
+
+Before returning the response verify:
+
+- No unsupported medical facts
+- No unsupported dosage
+- No invented interaction
+- Individual warnings are not presented as interactions
+- Risk is supported by evidence
+- Missing evidence is clearly identified
+- Only validated medicines are analyzed
+- Sources are correctly attributed
+- Doctor/pharmacist advice is included
+- Medical disclaimer is included
+`;
+
+  try {
+    // --------------------------------------------------
+    // Gemini request
+    // --------------------------------------------------
+
+    const response =
+      await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+
+        contents: `
+${systemPrompt}
+
+${userPrompt}
+
+==================================================
+FINAL OUTPUT FORMAT
+==================================================
+
+Return ONLY valid JSON.
+
+Do NOT use markdown code fences.
+
+Return exactly:
+
+{
+  "riskLevel": "Low | Moderate | High | Critical | Unable to determine",
+  "analysis": "complete prescription medical analysis"
+}
+
+The riskLevel MUST be exactly one of:
+
+Low
+Moderate
+High
+Critical
+Unable to determine
+
+The risk level MUST be based ONLY on retrieved
+interaction or combination evidence.
+
+Do not invent interactions.
+`,
+      });
+
+    const aiText =
+      response.text?.trim();
+
+    if (!aiText) {
+      throw new Error(
+        "AI failed to generate prescription analysis"
+      );
+    }
+
+    // --------------------------------------------------
+    // Parse Gemini JSON
+    // --------------------------------------------------
+
+    let parsedResponse;
+
+    try {
+      parsedResponse =
+        JSON.parse(aiText);
+    } catch (parseError) {
+      console.error(
+        "GEMINI PRESCRIPTION JSON PARSE ERROR:"
+      );
+
+      console.error(
+        parseError.message
+      );
+
+      console.error(
+        "RAW AI RESPONSE:",
+        aiText
+      );
+
+      throw new Error(
+        "AI returned an invalid structured prescription response"
+      );
+    }
+
+    // --------------------------------------------------
+    // Validate AI risk
+    // --------------------------------------------------
+
+    const aiRiskLevel =
+      validateRiskLevel(
+        parsedResponse?.riskLevel
+      );
+
+    // --------------------------------------------------
+    // FINAL PRESCRIPTION RISK GATE
+    // --------------------------------------------------
+
+    /*
+     * Prescription interactionEvidence is an array
+     * containing evidence for every medicine pair.
+     *
+     * At least one pair must have direct evidence.
+     */
+
+    const directEvidenceAvailable =
+      Array.isArray(
+        medicineData
+          ?.interactionEvidence
+      ) &&
+      medicineData.interactionEvidence.some(
+        (pair) =>
+          pair
+            ?.directPairEvidenceAvailable === true
+      );
+
+    /*
+     * IMPORTANT:
+     *
+     * If no medicine pair has direct interaction evidence,
+     * the backend forces Unable to determine.
+     */
+
+    const riskLevel =
+      directEvidenceAvailable
+        ? aiRiskLevel
+        : "Unable to determine";
+
+    // --------------------------------------------------
+    // Validate analysis
+    // --------------------------------------------------
+
+    const analysis =
+      typeof parsedResponse?.analysis === "string"
+        ? parsedResponse.analysis.trim()
+        : "";
+
+    if (!analysis) {
+      throw new Error(
+        "AI returned an empty prescription analysis"
+      );
+    }
+
+    // --------------------------------------------------
+    // Final response
+    // --------------------------------------------------
+
+    return {
+      riskLevel,
+      analysis,
+    };
+
+  } catch (error) {
+    console.error(
+      "GEMINI PRESCRIPTION AI ERROR:"
+    );
+
+    console.error(
+      "Name:",
+      error.name
+    );
+
+    console.error(
+      "Message:",
+      error.message
+    );
+
+    if (error.status) {
+      console.error(
+        "Status:",
+        error.status
+      );
+    }
+
+    throw error;
+  }
+};
+
+// ======================================================
+// EXPORTS
+// ======================================================
+
 module.exports = {
   analyzeMedicineWithAI,
+  analyzePrescriptionWithAI,
 };

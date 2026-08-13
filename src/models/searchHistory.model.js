@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const searchHistorySchema = new mongoose.Schema(
   {
+    // --------------------------------------------------
+    // User
+    // --------------------------------------------------
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -9,17 +13,47 @@ const searchHistorySchema = new mongoose.Schema(
       index: true,
     },
 
+    // --------------------------------------------------
+    // Medicines
+    // --------------------------------------------------
+
     medicine1: {
       type: String,
-      required: true,
       trim: true,
+      default: null,
     },
 
     medicine2: {
       type: String,
-      required: true,
       trim: true,
+      default: null,
     },
+
+    // --------------------------------------------------
+    // Analysis source
+    // --------------------------------------------------
+
+    source: {
+      type: String,
+      enum: ["manual", "prescription"],
+      default: "manual",
+      index: true,
+    },
+
+    // --------------------------------------------------
+    // Prescription reference
+    // --------------------------------------------------
+
+    prescriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Prescription",
+      default: null,
+      index: true,
+    },
+
+    // --------------------------------------------------
+    // Risk level
+    // --------------------------------------------------
 
     riskLevel: {
       type: String,
@@ -32,6 +66,10 @@ const searchHistorySchema = new mongoose.Schema(
       ],
       default: "Unable to determine",
     },
+
+    // --------------------------------------------------
+    // Response mode
+    // --------------------------------------------------
 
     mode: {
       type: String,
