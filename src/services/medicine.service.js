@@ -3,6 +3,7 @@
 const rxnormService = require("./rxnorm.service");
 const dailymedService = require("./dailymed.service");
 const openfdaService = require("./openfda.service");
+const aiService = require("./ai.service");
 
 // Get text from a value
 const getText = (value) => {
@@ -49,7 +50,6 @@ const findDailyMedSections = (data) => {
       return;
     }
 
-    // DailyMed section
     if (value.title || value.Title) {
       const title = getText(value.title || value.Title);
       const text = getText(value.text || value.Text);
@@ -180,9 +180,8 @@ const normalizeOpenFDA = (openfdaData) => {
   };
 };
 
-// Analyze medicine using all medicine data sources
-const analyzeMedicine = async (medicineName) => {
-  // Validate medicine input
+// Get complete information for one medicine
+const getMedicineData = async (medicineName) => {
   if (!medicineName || !medicineName.trim()) {
     throw new Error("Medicine name is required");
   }
@@ -196,7 +195,8 @@ const analyzeMedicine = async (medicineName) => {
   // Get drug information from DailyMed using RxCUI
   const dailymedData =
     await dailymedService.getDrugInfo(
-      rxnormData.rxcui
+      rxnormData.rxcui,
+      rxnormData
     );
 
   // Get safety data from openFDA
@@ -205,15 +205,14 @@ const analyzeMedicine = async (medicineName) => {
       normalizedName
     );
 
-  // Convert large DailyMed data into useful fields
+  // Normalize DailyMed data
   const normalizedDailyMed =
     normalizeDailyMed(dailymedData);
 
-  // Convert openFDA data into useful safety fields
+  // Normalize openFDA data
   const normalizedOpenFDA =
     normalizeOpenFDA(openfdaData);
 
-  // Final clean medicine data
   return {
     medicine: normalizedName,
     rxcui: rxnormData.rxcui,
@@ -221,6 +220,48 @@ const analyzeMedicine = async (medicineName) => {
     drugInfo: normalizedDailyMed,
 
     safety: normalizedOpenFDA,
+  };
+};
+
+// Analyze one or two medicines
+const analyzeMedicine = async (
+  medicineName1,
+  medicineName2
+) => {
+  // Validate first medicine
+  if (!medicineName1 || !medicineName1.trim()) {
+    throw new Error("First medicine name is required");
+  }
+
+  // Validate second medicine
+  if (!medicineName2 || !medicineName2.trim()) {
+    throw new Error("Second medicine name is required");
+  }
+
+  // Get complete data for both medicines
+  const [medicine1Data, medicine2Data] =
+    await Promise.all([
+      getMedicineData(medicineName1),
+      getMedicineData(medicineName2),
+    ]);
+
+  // Combine trusted medical data
+  const combinedMedicineData = {
+    medicine1: medicine1Data,
+    medicine2: medicine2Data,
+  };
+
+  // Ask AI to analyze the combination
+  const aiAnalysis =
+    await aiService.analyzeMedicineWithAI(
+      combinedMedicineData
+    );
+
+  // Final response
+  return {
+    medicine1: medicine1Data,
+    medicine2: medicine2Data,
+    interactionAnalysis: aiAnalysis,
   };
 };
 

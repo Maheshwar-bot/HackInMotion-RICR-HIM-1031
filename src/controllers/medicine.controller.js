@@ -2,22 +2,26 @@
 
 const medicineService = require("../services/medicine.service");
 
-// Analyze medicine from user input
+// Analyze two medicines from user input
 const analyzeMedicine = async (req, res) => {
   try {
-    const { medicineName } = req.body;
+    const { medicineName1, medicineName2 } = req.body;
 
-    // Analyze medicine using backend services
+    // Analyze both medicines
     const result = await medicineService.analyzeMedicine(
-      medicineName
+      medicineName1,
+      medicineName2
     );
 
     return res.status(200).json({
       success: true,
-      message: "Medicine identified successfully",
+      message: "Medicine interaction analysis completed successfully",
       data: result,
     });
   } catch (error) {
+    console.error("MEDICINE CONTROLLER ERROR:");
+    console.error(error.message);
+
     return res.status(400).json({
       success: false,
       message: error.message,

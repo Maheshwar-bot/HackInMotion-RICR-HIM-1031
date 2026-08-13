@@ -16,11 +16,24 @@ const get = async (url, params = {}) => {
     // Show external API error during development
     console.error("API URL:", url);
     console.error("API Status:", error.response?.status);
-    console.error("API Error:", error.response?.data || error.message);
+    console.error(
+      "API Error:",
+      error.response?.data || error.message
+    );
 
-    throw new Error(
+    // Preserve original API status and response data
+    // so individual services can handle cases like 404.
+    const apiError = new Error(
       "Medicine data service is temporarily unavailable"
     );
+
+    apiError.status =
+      error.response?.status || null;
+
+    apiError.data =
+      error.response?.data || null;
+
+    throw apiError;
   }
 };
 

@@ -104,19 +104,52 @@ const getDailyMedXML = async (url) => {
   return xmlData;
 };
 
-// Get drug information using RxCUI
-const getDrugInfo = async (rxcui) => {
-  // Find labels linked to RxCUI
+// Get drug information using RxCUI and RxNorm identity
+const getDrugInfo = async (
+  rxcui,
+  medicineIdentity = {}
+) => {
+  const {
+    name = "",
+    synonym = "",
+    inputName = "",
+    isIngredient = false,
+  } = medicineIdentity;
+
+  /*
+   * IMPORTANT:
+   * If the user supplied only an ingredient-level medicine
+   * such as "Paracetamol", do not randomly select a
+   * combination/product label from DailyMed.
+   */
+  if (isIngredient) {
+    console.log(
+      `DAILYMED: "${inputName}" identified as an ingredient.`
+    );
+
+    console.log(
+      "DAILYMED: Skipping automatic product-label selection."
+    );
+
+    return {
+      found: false,
+      label: null,
+
+      reason:
+        "Ingredient-level medicine input. Product-specific DailyMed label was not selected automatically.",
+    };
+  }
+
+  // Search DailyMed for a specific product/clinical drug
   const listData = await getDailyMedJSON(
     `${DAILYMED_BASE_URL}/spls.json`,
     {
       rxcui,
-      pagesize: 5,
+      pagesize: 10,
       page: 1,
     }
   );
 
-  // Extract available labels
   const records = listData?.data || [];
 
   console.log(
@@ -131,36 +164,103 @@ const getDrugInfo = async (rxcui) => {
     };
   }
 
-  // Try available labels one by one
-  for (const record of records) {
+  const targetNames = [
+    inputName,
+    name,
+    synonym,
+  ]
+    .filter(Boolean)
+    .map((value) =>
+      value.toLowerCase().trim()
+    );
+
+  /*
+   * Score labels using the actual medicine identity.
+   * Never blindly select records[0].
+   */
+  const scoredRecords = records.map((record) => {
+    const title = (
+      record.title || ""
+    ).toLowerCase();
+
+    let score = 0;
+
+    targetNames.forEach((target) => {
+      if (target && title.includes(target)) {
+        score += 3;
+      }
+    });
+
+    return {
+      record,
+      score,
+      publishedDate:
+        record.published_date || "",
+    };
+  });
+
+  scoredRecords.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+
+    return (
+      new Date(b.publishedDate || 0) -
+      new Date(a.publishedDate || 0)
+    );
+  });
+
+  /*
+   * Only accept a label when there is actual evidence
+   * that it matches the requested medicine identity.
+   */
+  const relevantRecords =
+    scoredRecords.filter(
+      (item) => item.score > 0
+    );
+
+  if (!relevantRecords.length) {
+    console.warn(
+      `DAILYMED: No confidently matching label found for "${inputName}".`
+    );
+
+    return {
+      found: false,
+      label: null,
+      reason:
+        "No confidently matching DailyMed product label found.",
+    };
+  }
+
+  // Try relevant labels
+  for (const item of relevantRecords) {
+    const record = item.record;
+
     try {
-      // Build XML URL
       const xmlUrl =
         `${DAILYMED_BASE_URL}/spls/${record.setid}.xml`;
 
-      // Fetch XML
       const xmlData =
         await getDailyMedXML(xmlUrl);
 
-      // Convert XML into JavaScript object
       const labelData =
         parseXML(xmlData);
 
-      // Return successfully parsed label
       return {
         found: true,
 
         label: {
           setid: record.setid,
           title: record.title,
-          publishedDate: record.published_date,
+          publishedDate:
+            record.published_date,
 
-          // Parsed DailyMed XML
+          relevanceScore: item.score,
+
           data: labelData,
         },
       };
     } catch (error) {
-      // Try next label if current one fails
       console.warn(
         `DailyMed label failed: ${record.setid}`
       );
@@ -172,10 +272,12 @@ const getDrugInfo = async (rxcui) => {
     }
   }
 
-  // No valid label found
-  throw new Error(
-    "Unable to retrieve a valid DailyMed drug label"
-  );
+  return {
+    found: false,
+    label: null,
+    reason:
+      "Unable to retrieve a valid matching DailyMed label.",
+  };
 };
 
 module.exports = {

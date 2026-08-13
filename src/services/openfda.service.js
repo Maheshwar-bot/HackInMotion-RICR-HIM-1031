@@ -16,33 +16,56 @@ const getSafetyData = async (medicineName) => {
 
   const normalizedName = medicineName.trim();
 
-  // Search FDA label using generic or brand name
-  const data = await apiClient.get(
-    OPENFDA_BASE_URL,
-    {
-      search:
-        `openfda.generic_name:"${normalizedName}" OR ` +
-        `openfda.brand_name:"${normalizedName}"`,
-      limit: 5,
+  try {
+    // Search FDA label using generic or brand name
+    const data = await apiClient.get(
+      OPENFDA_BASE_URL,
+      {
+        search:
+          `openfda.generic_name:"${normalizedName}" OR ` +
+          `openfda.brand_name:"${normalizedName}"`,
+        limit: 5,
+      }
+    );
+
+    // Extract FDA records
+    const records = data?.results || [];
+
+    // No matching records
+    if (!records.length) {
+      return {
+        found: false,
+        records: [],
+      };
     }
-  );
 
-  // Extract FDA records
-  const records = data?.results || [];
-
-  // Return empty result if no data found
-  if (!records.length) {
+    // Return FDA safety records
     return {
-      found: false,
-      records: [],
+      found: true,
+      records,
     };
-  }
+  } catch (error) {
+    // openFDA returns 404 when no matching records are found.
+    // This should not stop the complete medicine analysis.
+    if (error?.status === 404) {
+      console.warn(
+        `openFDA: No label data found for "${normalizedName}"`
+      );
 
-  // Return FDA safety records
-  return {
-    found: true,
-    records,
-  };
+      return {
+        found: false,
+        records: [],
+      };
+    }
+
+    // Actual API/network/server error
+    console.error("OPENFDA SERVICE ERROR:");
+    console.error("Medicine:", normalizedName);
+    console.error("Status:", error?.status);
+    console.error("Message:", error.message);
+
+    throw error;
+  }
 };
 
 module.exports = {
