@@ -7,7 +7,10 @@ const upload = require("../middleware/upload.middleware");
 
 const {
   uploadPrescription,
+  getMyPrescriptions,
+  deletePrescription,
 } = require("../controllers/prescription.controller");
+
 
 // Upload prescription
 router.post(
@@ -16,5 +19,22 @@ router.post(
   upload.single("prescription"),
   uploadPrescription
 );
+
+
+// Get logged-in user's prescriptions
+router.get(
+  "/",
+  authMiddleware,
+  getMyPrescriptions
+);
+
+
+// Delete prescription
+router.delete(
+  "/:id",
+  authMiddleware,
+  deletePrescription
+);
+
 
 module.exports = router;
