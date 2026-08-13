@@ -1,60 +1,33 @@
-# MediSafe AI — Professional Frontend Prototype
+# MediSafe AI Frontend Final
+Mobile-first app UI. Backend/API is intentionally not included.
+Added frontend challenge screens: Prescription OCR, Reminders, Languages, Doctor/Pharmacist Mode, AI Symptom Checker, Allergy Cross-check.
 
-## Pages
-- Landing
-- Login
-- Create Account
-- Forgot Password
-- Home dashboard
-- Medicine library / search
-- Interaction checker
-- Check history
-- Patient history / notes
-- My profile
-- Settings
+## Navigation update
+The primary navigation is intentionally limited to five app-level items:
+1. Home
+2. Patient Report
+3. AI Doctor Chatbot
+4. History
+5. Settings
 
-## Folder structure
-```text
-MediSafe-AI-Professional/
-├── index.html
-├── pages/
-├── css/
-├── js/
-├── assets/
-│   └── images/
-│       └── medisafe-login-bg.png   # uploaded reference image
-└── data/
-```
+My Profile is accessed from the profile/avatar control instead of taking a sidebar slot.
+Language, Reminders and Allergies are grouped inside Settings, while medicine/OCR/checker tools remain accessible from the Home dashboard.
 
-## Run
-1. Extract the ZIP.
-2. Open `index.html` in a browser.
-3. For best results, run a local server in VS Code (Live Server) instead of opening files directly.
 
-## What is live in this prototype
-- Responsive UI
-- Page-to-page navigation
-- Login/create-account demo flow
-- Password visibility toggle
-- Local profile storage
-- Add medicine to local cabinet
-- Medicine search/filter
-- Interaction checker with demo dataset
-- Check history saved in localStorage
-- Patient notes saved locally
-- Profile editing
-- Settings toggles
-- Mobile sidebar + bottom navigation
-- Toast notifications
+## Latest navigation/auth changes
+- Removed the hamburger `☰` button from the app header.
+- Kept exactly five primary navigation items.
+- Added a profile dropdown with My Profile, Settings and Log out.
+- Added OTP verification after Create Account.
+- Frontend demo OTP is `123456`; replace it with Supabase/Auth-provider OTP verification in production.
 
-## Production connection
-The frontend currently uses localStorage/sessionStorage so it works without a backend.
-For production:
-- Supabase Auth for real login/signup/password reset
-- Supabase PostgreSQL for users, medicines, checks and patient records
-- Secure backend/API for medicine data and interaction logic
-- Never expose service-role keys in browser JavaScript
-- Use Row Level Security (RLS) for patient data
 
-## Important
-The interaction checker is a UI/demo dataset, not a clinical decision system. Verify medicine information using an authoritative source and a qualified healthcare professional before making health decisions.
+## Final authentication/navigation UX update
+- Removed the visible profile chevron (`⌄`).
+- Login and Create Account are separate, explicit actions.
+- Login page links to Create Account; Create Account links back to Login.
+- Both auth pages have a clean Home link instead of circular "Back" navigation.
+- Create Account validates the email before opening OTP verification.
+- Direct access to OTP redirects back to Create Account if no valid signup session exists.
+- OTP screen shows the email being verified.
+- Profile dropdown still contains My Profile, Settings and Log out.

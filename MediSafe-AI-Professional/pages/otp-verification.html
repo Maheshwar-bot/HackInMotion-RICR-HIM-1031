@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify Account | MediSafe AI</title>
+<link rel="stylesheet" href="../css/global.css"><link rel="stylesheet" href="../css/auth.css"><link rel="stylesheet" href="../css/app.css"></head>
+<body class="otp-page">
+<main class="auth">
+<section class="art"><a class="brand white" href="../index.html">♡ MediSafe <b>AI</b></a>
+<div><h1>One more step,<br><em>then you're in.</em></h1><p>Verify your email before entering your personal medicine space.</p></div></section>
+<section class="form"><a class="auth-home-link" href="create-account.html">← Back to Create Account</a>
+<div class="card otp-card"><div class="logo">✉</div><h2>Verify your account</h2>
+<p id="otpTarget">We sent a 6-digit verification code to the email you entered.</p>
+<div class="otp-demo"><span>Demo verification code</span><b>123456</b></div>
+<form id="otpForm"><label>Verification code</label><input id="otp" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit OTP" autocomplete="one-time-code" required>
+<button class="btn full auth-special-btn">Verify Email & Create Account <span>→</span></button></form>
+<div id="msg"></div><p class="foot">Didn't receive it? <button type="button" class="text-btn" onclick="document.getElementById('msg').textContent='Demo OTP is 123456. Production email/SMS delivery will be connected to the auth provider.'">Resend OTP</button></p>
+</div></section></main><script src="../js/auth.js"></script></body></html>
