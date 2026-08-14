@@ -803,25 +803,6 @@ function renderMedicineAnalysis(data){
     document.getElementById("result");
 
 
-  /*
-   * Backend response:
-   *
-   * {
-   *   success: true,
-   *   data: {
-   *     medicine1,
-   *     medicine2,
-   *     interactionEvidence,
-   *     riskLevel,
-   *     mode,
-   *     interactionAnalysis
-   *   }
-   * }
-   *
-   * Fallback is kept in case backend returns
-   * the analysis object directly.
-   */
-
   const analysisData=
     data?.data &&
     typeof data.data==="object"
@@ -886,16 +867,6 @@ function renderMedicineAnalysis(data){
        rawAnalysis?.summary||
        "Information not available in the retrieved medical data.";
 
-
-  /*
-   * IMPORTANT:
-   *
-   * Only directPairEvidenceAvailable === true
-   * means direct medicine-to-medicine evidence exists.
-   *
-   * General warnings must NOT be treated as
-   * direct interaction evidence.
-   */
 
   const directPairAvailable=
     interactionEvidence
@@ -1404,6 +1375,589 @@ function sendChat(e){
 
 
 // =============================================================
+// PRESCRIPTION OCR HELPERS
+// =============================================================
+
+function getPrescriptionPayload(data){
+
+  if(data?.data && typeof data.data==="object"){
+    return data.data;
+  }
+
+  return data||{};
+
+}
+
+
+function getPrescriptionId(data){
+
+  const payload=
+    getPrescriptionPayload(data);
+
+
+  return (
+    payload.prescriptionId||
+    payload._id||
+    payload.prescription?._id||
+    payload.prescription?.id||
+    null
+  );
+
+}
+
+
+function getPrescriptionMedicines(data){
+
+  const payload=
+    getPrescriptionPayload(data);
+
+
+  return (
+    payload.medicines||
+    payload.prescription?.medicines||
+    payload.ocrResult?.medicines||
+    payload.ocr?.medicines||
+    []
+  );
+
+}
+
+
+function renderPrescriptionMedicines(medicines){
+
+  if(!Array.isArray(medicines)||medicines.length===0){
+
+    return `
+
+      <div class="ui-card">
+
+        <b>
+          No medicines were detected.
+        </b>
+
+        <p class="muted">
+          Please make sure the prescription
+          image is clear and readable.
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+
+  return medicines.map((medicine,index)=>{
+
+    const name=
+      medicine.normalizedName||
+      medicine.originalName||
+      medicine.name||
+      "Unknown medicine";
+
+
+    const originalName=
+      medicine.originalName||
+      medicine.name||
+      name;
+
+
+    const rxcui=
+      medicine.rxcui||
+      "N/A";
+
+
+    const validated=
+      medicine.validated===true;
+
+
+    const confidence=
+      medicine.confidence||
+      "N/A";
+
+
+    const strength=
+      medicine.strength||
+      "Not specified";
+
+
+    const instructions=
+      medicine.instructions||
+      "Not specified";
+
+
+    return `
+
+      <div class="ui-card prescription-medicine">
+
+        <div class="section-title">
+
+          <div>
+
+            <small>
+              MEDICINE ${index+1}
+            </small>
+
+            <h3>
+              ${esc(name)}
+            </h3>
+
+          </div>
+
+          <span class="tag">
+            ${validated?"Validated":"Unrecognized"}
+          </span>
+
+        </div>
+
+
+        ${
+          originalName!==name
+            ?`
+
+              <p class="muted">
+                OCR name:
+                ${esc(originalName)}
+              </p>
+
+            `
+            :""
+        }
+
+
+        <div class="rows">
+
+          <div class="row">
+
+            <span>
+              RxCUI
+            </span>
+
+            <div class="grow">
+
+              <b>
+                ${esc(rxcui)}
+              </b>
+
+            </div>
+
+          </div>
+
+
+          <div class="row">
+
+            <span>
+              Strength
+            </span>
+
+            <div class="grow">
+
+              <b>
+                ${esc(strength)}
+              </b>
+
+            </div>
+
+          </div>
+
+
+          <div class="row">
+
+            <span>
+              Instructions
+            </span>
+
+            <div class="grow">
+
+              <b>
+                ${esc(instructions)}
+              </b>
+
+            </div>
+
+          </div>
+
+
+          <div class="row">
+
+            <span>
+              Confidence
+            </span>
+
+            <div class="grow">
+
+              <b>
+                ${esc(confidence)}
+              </b>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        ${
+          validated
+            ?`
+
+              <p
+                class="success"
+                style="margin-top:12px"
+              >
+                ✓ Medicine validated through RxNorm.
+              </p>
+
+            `
+            :`
+
+              <div
+                class="warning"
+                style="margin-top:12px"
+              >
+
+                <b>
+                  Medicine could not be validated.
+                </b>
+
+                <p>
+                  This medicine is stored from OCR,
+                  but it will not be treated as a
+                  trusted medicine identity for full
+                  medical analysis.
+                </p>
+
+              </div>
+
+            `
+        }
+
+      </div>
+
+    `;
+
+  }).join("");
+
+}
+
+
+function renderPrescriptionAnalysis(data){
+
+  const payload=
+    getPrescriptionPayload(data);
+
+
+  const medicines=
+    payload.medicines||
+    [];
+
+
+  const riskLevel=
+    payload.riskLevel||
+    "Unable to determine";
+
+
+  const interactionEvidence=
+    payload.interactionEvidence||
+    {};
+
+
+  const rawAnalysis=
+    payload.interactionAnalysis;
+
+
+  const analysis=
+    typeof rawAnalysis==="string"
+      ?rawAnalysis
+      :rawAnalysis?.analysis||
+       rawAnalysis?.explanation||
+       rawAnalysis?.summary||
+       "Information not available in the retrieved medical data.";
+
+
+  const mode=
+    payload.mode==="expert"
+      ?"Expert"
+      :"Normal";
+
+
+  const directPairAvailable=
+    interactionEvidence
+      .directPairEvidenceAvailable===true;
+
+
+  let evidenceHTML="";
+
+
+  if(directPairAvailable){
+
+    evidenceHTML=`
+
+      <div class="ui-card">
+
+        <h3>
+          Direct Interaction Evidence
+        </h3>
+
+        <p>
+          Direct pair-specific interaction
+          evidence is available.
+        </p>
+
+      </div>
+
+    `;
+
+  }else{
+
+    evidenceHTML=`
+
+      <div class="ui-card">
+
+        <h3>
+          Interaction Evidence
+        </h3>
+
+        <p>
+          No direct pair-specific interaction
+          evidence was available in the
+          retrieved medical data.
+        </p>
+
+        <p class="muted">
+          General warnings or safety information
+          are not being treated as proof of a
+          direct interaction.
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+
+  return `
+
+    <div class="ui-card">
+
+      <div class="section-title">
+
+        <div>
+
+          <small>
+            ${mode.toUpperCase()} PRESCRIPTION ANALYSIS
+          </small>
+
+          <h2>
+            Analysis Result
+          </h2>
+
+        </div>
+
+        <span class="tag">
+          ${esc(riskLevel)}
+        </span>
+
+      </div>
+
+
+      <div
+        class="ui-card"
+        style="margin-top:15px"
+      >
+
+        <h3>
+          Medicines
+        </h3>
+
+        ${renderPrescriptionMedicines(medicines)}
+
+      </div>
+
+
+      <div
+        class="ui-card"
+        style="margin-top:15px"
+      >
+
+        <h3>
+          AI Analysis
+        </h3>
+
+        <p>
+          ${esc(analysis)}
+        </p>
+
+      </div>
+
+
+      <div
+        style="margin-top:15px"
+      >
+
+        ${evidenceHTML}
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+async function analyzePrescription(
+  prescriptionId,
+  mode,
+  result
+){
+
+  const token=
+    localStorage.getItem("token");
+
+
+  if(!token){
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Authentication required.
+        </b>
+
+        <p>
+          Please login before analysing
+          a prescription.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  if(!prescriptionId){
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Prescription ID is missing.
+        </b>
+
+        <p>
+          Please upload the prescription again.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  result.innerHTML=`
+
+    <div class="ui-card">
+
+      <b>
+        Analysing prescription...
+      </b>
+
+      <p class="muted">
+        ${
+          mode==="expert"
+            ?"Running Expert analysis."
+            :"Running Normal analysis."
+        }
+      </p>
+
+    </div>
+
+  `;
+
+
+  try{
+
+    const response=
+      await fetch(
+        `${API_BASE_URL}/api/prescriptions/${encodeURIComponent(prescriptionId)}/analyze`,
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":"application/json",
+
+            "Authorization":
+              `Bearer ${token}`
+          },
+
+          body:JSON.stringify({
+            mode
+          })
+        }
+      );
+
+
+    const data=
+      await response.json();
+
+
+    if(!response.ok||data.success===false){
+
+      throw new Error(
+        data.message||
+        "Prescription analysis failed."
+      );
+
+    }
+
+
+    result.innerHTML=
+      renderPrescriptionAnalysis(data);
+
+
+  }catch(error){
+
+    console.error(
+      "Prescription analysis error:",
+      error
+    );
+
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Prescription analysis failed
+        </b>
+
+        <p>
+          ${esc(
+            error.message||
+            "Unable to analyse prescription."
+          )}
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// =============================================================
 // EXTRA PAGES
 // =============================================================
 
@@ -1420,27 +1974,57 @@ function extras(){
         <div class="tool">
 
           <h3>
-            Upload prescription or medicine strip
+            Upload prescription
           </h3>
 
-          <input
-            type="file"
-            accept="image/*"
-          >
-
           <p class="muted">
-
-            Frontend flow: upload → OCR processing
-            → detected medicine → confirm.
-
+            Upload a clear prescription image.
+            MediSafe AI will extract medicines,
+            validate them through RxNorm and
+            show the detected information.
           </p>
 
-          <div class="warning">
 
-            OCR result will be verified by the
-            user before adding it to medicines.
+          <div
+            class="field"
+            style="margin-top:18px"
+          >
+
+            <label>
+              Prescription image
+            </label>
+
+            <input
+              id="prescriptionFile"
+              type="file"
+              accept="image/*"
+            >
 
           </div>
+
+
+          <div
+            id="prescriptionPreview"
+            style="margin-top:15px"
+          ></div>
+
+
+          <button
+            id="uploadPrescriptionBtn"
+            class="btn"
+            style="margin-top:15px"
+            type="button"
+            onclick="uploadPrescription()"
+          >
+            Upload & Scan Prescription
+            <span>→</span>
+          </button>
+
+
+          <div
+            id="prescriptionResult"
+            style="margin-top:18px"
+          ></div>
 
         </div>
 
@@ -1448,6 +2032,96 @@ function extras(){
 
       "prescription-ocr.html"
     );
+
+
+    const fileInput=
+      document.getElementById(
+        "prescriptionFile"
+      );
+
+
+    if(fileInput){
+
+      fileInput.addEventListener(
+        "change",
+        ()=>{
+
+          const file=
+            fileInput.files?.[0];
+
+
+          const preview=
+            document.getElementById(
+              "prescriptionPreview"
+            );
+
+
+          if(!file){
+
+            preview.innerHTML="";
+
+            return;
+
+          }
+
+
+          if(!file.type.startsWith("image/")){
+
+            preview.innerHTML=`
+
+              <div class="warning">
+
+                Please select an image file.
+
+              </div>
+
+            `;
+
+            fileInput.value="";
+
+            return;
+
+          }
+
+
+          const objectURL=
+            URL.createObjectURL(file);
+
+
+          preview.innerHTML=`
+
+            <div class="ui-card">
+
+              <p>
+
+                <b>
+                  Selected:
+                </b>
+
+                ${esc(file.name)}
+
+              </p>
+
+              <img
+                src="${objectURL}"
+                alt="Prescription preview"
+                style="
+                  width:100%;
+                  max-height:400px;
+                  object-fit:contain;
+                  border-radius:14px;
+                  margin-top:10px;
+                "
+              >
+
+            </div>
+
+          `;
+
+        }
+      );
+
+    }
 
 
   }else if(path==="reminders.html"){
@@ -1982,6 +2656,357 @@ function extras(){
 
       "settings.html"
     );
+
+  }
+
+}
+
+
+// =============================================================
+// PRESCRIPTION UPLOAD
+// =============================================================
+
+async function uploadPrescription(){
+
+  const fileInput=
+    document.getElementById(
+      "prescriptionFile"
+    );
+
+
+  const result=
+    document.getElementById(
+      "prescriptionResult"
+    );
+
+
+  const button=
+    document.getElementById(
+      "uploadPrescriptionBtn"
+    );
+
+
+  const file=
+    fileInput?.files?.[0];
+
+
+  if(!file){
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Select a prescription image first.
+        </b>
+
+        <p>
+          Please choose a clear prescription
+          image before uploading.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  if(!file.type.startsWith("image/")){
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        Please select a valid image file.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  const token=
+    localStorage.getItem("token");
+
+
+  if(!token){
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Authentication required.
+        </b>
+
+        <p>
+          Please login before uploading
+          a prescription.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  if(button){
+
+    button.disabled=true;
+
+    button.dataset.originalText=
+      button.innerHTML;
+
+    button.innerHTML=
+      "Uploading & Scanning...";
+
+  }
+
+
+  result.innerHTML=`
+
+    <div class="ui-card">
+
+      <b>
+        Scanning prescription...
+      </b>
+
+      <p class="muted">
+        Uploading image and extracting
+        medicines. Please wait.
+      </p>
+
+    </div>
+
+  `;
+
+
+  try{
+
+    const formData=
+      new FormData();
+
+
+    formData.append(
+      "prescription",
+      file
+    );
+
+
+    const response=
+      await fetch(
+        `${API_BASE_URL}/api/prescriptions/upload`,
+        {
+          method:"POST",
+
+          headers:{
+            "Authorization":
+              `Bearer ${token}`
+          },
+
+          body:formData
+        }
+      );
+
+
+    const data=
+      await response.json();
+
+
+    if(!response.ok||data.success===false){
+
+      throw new Error(
+        data.message||
+        "Prescription upload failed."
+      );
+
+    }
+
+
+    const prescriptionId=
+      getPrescriptionId(data);
+
+
+    const medicines=
+      getPrescriptionMedicines(data);
+
+
+    result.innerHTML=`
+
+      <div class="ui-card">
+
+        <div class="section-title">
+
+          <div>
+
+            <small>
+              OCR COMPLETE
+            </small>
+
+            <h2>
+              Prescription scanned
+            </h2>
+
+          </div>
+
+          <span class="tag">
+            Success
+          </span>
+
+        </div>
+
+
+        <p class="muted">
+          The prescription was uploaded
+          successfully and the detected
+          medicines are shown below.
+        </p>
+
+
+        <div style="margin-top:15px">
+
+          ${renderPrescriptionMedicines(medicines)}
+
+        </div>
+
+
+        ${
+          prescriptionId
+            ?`
+
+              <div
+                class="ui-card"
+                style="margin-top:15px"
+              >
+
+                <h3>
+                  Analyse Prescription
+                </h3>
+
+                <p class="muted">
+                  Choose how you want the
+                  detected validated medicines
+                  to be analysed.
+                </p>
+
+
+                <div
+                  style="
+                    display:flex;
+                    gap:10px;
+                    flex-wrap:wrap;
+                    margin-top:12px;
+                  "
+                >
+
+                  <button
+                    class="btn"
+                    type="button"
+                    onclick="analyzePrescription(
+                      '${esc(prescriptionId)}',
+                      'normal',
+                      document.getElementById('prescriptionResult')
+                    )"
+                  >
+                    Normal Analysis →
+                  </button>
+
+
+                  <button
+                    class="btn"
+                    type="button"
+                    onclick="analyzePrescription(
+                      '${esc(prescriptionId)}',
+                      'expert',
+                      document.getElementById('prescriptionResult')
+                    )"
+                  >
+                    Expert Analysis →
+                  </button>
+
+                </div>
+
+              </div>
+
+            `
+            :`
+
+              <div
+                class="warning"
+                style="margin-top:15px"
+              >
+
+                <b>
+                  Prescription uploaded successfully.
+                </b>
+
+                <p>
+                  Prescription ID was not returned,
+                  so analysis cannot be started from
+                  this screen yet.
+                </p>
+
+              </div>
+
+            `
+        }
+
+      </div>
+
+    `;
+
+
+  }catch(error){
+
+    console.error(
+      "Prescription upload error:",
+      error
+    );
+
+
+    result.innerHTML=`
+
+      <div class="warning">
+
+        <b>
+          Prescription upload failed
+        </b>
+
+        <p>
+          ${esc(
+            error.message||
+            "Unable to upload prescription."
+          )}
+        </p>
+
+      </div>
+
+    `;
+
+
+  }finally{
+
+    if(button){
+
+      button.disabled=false;
+
+      if(button.dataset.originalText){
+
+        button.innerHTML=
+          button.dataset.originalText;
+
+      }
+
+    }
 
   }
 
