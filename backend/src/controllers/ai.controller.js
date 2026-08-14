@@ -196,10 +196,118 @@ const getChatHistory = async (req, res) => {
 };
 
 // ======================================================
+// Get All AI Doctor Chats
+// ======================================================
+
+const getAllChats = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const chats = await Chat.find({
+      userId,
+    })
+      .sort({
+        updatedAt: -1,
+      })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "AI Doctor chats fetched successfully",
+      data: chats,
+    });
+
+  } catch (error) {
+    console.error("GET ALL AI CHATS ERROR:");
+    console.error(error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch AI Doctor chats",
+    });
+  }
+};
+
+// ======================================================
+// Get Specific AI Doctor Chat
+// ======================================================
+
+const getChatById = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { chatId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    if (!chatId) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat ID is required",
+      });
+    }
+
+    // Find chat belonging to logged-in user
+    const chat = await Chat.findOne({
+      _id: chatId,
+      userId,
+    }).lean();
+
+    if (!chat) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    // Get messages of this specific chat
+    const messages = await Message.find({
+      chatId: chat._id,
+      userId,
+    })
+      .sort({
+        createdAt: 1,
+      })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat fetched successfully",
+      data: {
+        chat,
+        messages,
+      },
+    });
+
+  } catch (error) {
+    console.error("GET AI CHAT BY ID ERROR:");
+    console.error(error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch chat",
+    });
+  }
+};
+
+// ======================================================
 // Exports
 // ======================================================
 
 module.exports = {
   chat,
   getChatHistory,
+  getAllChats,
+  getChatById,
 };
