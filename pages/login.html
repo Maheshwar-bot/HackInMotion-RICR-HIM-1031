@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login | MediSafe AI</title>
+<link rel="stylesheet" href="../css/global.css"><link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+<main class="auth">
+<section class="art">
+  <a class="brand white" href="../index.html">♡ MediSafe <b>AI</b></a>
+  <div><h1>Welcome back,<br><em>let's keep you safe.</em></h1><p>Login to your personal medicine space.</p></div>
+</section>
+<section class="form">
+  <div class="card auth-card">
+    <h2>Welcome Back</h2>
+    <p class="auth-subtitle">Enter your account details to continue.</p>
+    <form id="authForm">
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
+      <button class="btn full auth-special-btn" type="submit">Login to MediSafe <span>→</span></button>
+    </form>
+    <div id="msg"></div>
+    <div class="auth-switch">
+      <span>New to MediSafe AI?</span>
+      <a class="outline-action" href="create-account.html">Create Account</a>
+    </div>
+  </div>
+</section>
+</main>
+<script src="../js/auth.js"></script>
+</body>
+</html>

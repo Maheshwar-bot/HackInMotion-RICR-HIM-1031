@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create Account | MediSafe AI</title>
+<link rel="stylesheet" href="../css/global.css"><link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+<main class="auth">
+<section class="art">
+  <a class="brand white" href="../index.html">♡ MediSafe <b>AI</b></a>
+  <div><h1>Create your<br><em>safe health space.</em></h1><p>Use your name and email to create your personal MediSafe AI account.</p></div>
+</section>
+<section class="form">
+  <div class="card auth-card">
+    <h2>Create Account</h2>
+    <p class="auth-subtitle">Your name tells us this is a new account. We'll verify your email before you enter.</p>
+    <form id="authForm">
+      <label>Full name</label>
+      <input id="name" required autocomplete="name" placeholder="Enter your full name">
+      <label>Email</label>
+      <input id="email" type="email" required autocomplete="email" placeholder="you@example.com">
+      <label>Password</label>
+      <input id="password" type="password" required autocomplete="new-password" placeholder="Create a password">
+      <label>Confirm Password</label>
+      <input id="confirm" type="password" required autocomplete="new-password" placeholder="Repeat your password">
+      <button class="btn full auth-special-btn" type="submit">Continue to Email Verification <span>→</span></button>
+    </form>
+    <div id="msg"></div>
+    <div class="auth-switch">
+      <span>Already have an account?</span>
+      <a class="outline-action" href="login.html">Login</a>
+    </div>
+  </div>
+</section>
+</main>
+<script src="../js/auth.js"></script>
+</body>
+</html>
