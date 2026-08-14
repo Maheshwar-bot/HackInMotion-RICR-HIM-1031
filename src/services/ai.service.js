@@ -975,10 +975,92 @@ Do not invent interactions.
 };
 
 // ======================================================
+// AI DOCTOR CHATBOT
+// ======================================================
+
+const chatWithAI = async (message) => {
+  if (!message || !message.trim()) {
+    throw new Error("Message is required");
+  }
+
+  const systemPrompt = `
+You are MediMitra AI Doctor, a medical information chatbot.
+
+IMPORTANT:
+- Always operate in EXPERT MODE.
+- Answer like a knowledgeable healthcare information assistant.
+- Keep responses short, natural and conversational.
+- Normally answer in about 4-5 short lines.
+- Do not give unnecessarily long medical reports.
+- Do not diagnose the user.
+- Do not prescribe medicines.
+- Do not recommend starting, stopping, or changing medicines.
+- Do not invent medical facts.
+- If the information is uncertain or unavailable, clearly say so.
+- For medicine-related questions, provide useful general information.
+- For serious or emergency symptoms, advise the user to seek immediate professional medical care.
+- Encourage consulting a qualified doctor or pharmacist when appropriate.
+- Do not calculate or recommend personalized medication dosage.
+
+RESPONSE STYLE:
+- Talk naturally like a chatbot.
+- Use simple language.
+- Be concise.
+- Answer the user's actual question directly.
+- Use small bullet points only when they improve clarity.
+- Do not return JSON.
+- Do not use markdown headings unless necessary.
+- Do not repeat the disclaimer in every response.
+
+The response should feel like a helpful AI doctor assistant, not like a database report.
+`;
+
+  const userPrompt = `
+User question:
+
+${message.trim()}
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+
+      contents: `
+${systemPrompt}
+
+${userPrompt}
+`,
+    });
+
+    const answer = response.text?.trim();
+
+    if (!answer) {
+      throw new Error("AI failed to generate a response");
+    }
+
+    return {
+      answer,
+    };
+
+  } catch (error) {
+    console.error("AI CHAT ERROR:");
+    console.error("Name:", error.name);
+    console.error("Message:", error.message);
+
+    if (error.status) {
+      console.error("Status:", error.status);
+    }
+
+    throw error;
+  }
+};
+
+// ======================================================
 // EXPORTS
 // ======================================================
 
 module.exports = {
   analyzeMedicineWithAI,
   analyzePrescriptionWithAI,
+  chatWithAI,
 };

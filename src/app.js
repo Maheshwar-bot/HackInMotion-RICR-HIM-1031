@@ -17,6 +17,9 @@ const prescriptionRoutes = require("./routes/prescription.routes");
 //Medical Report routes
 const medicalReportRoutes = require("./routes/medicalReport.routes");
 
+// AI Doctor Chat routes
+const aiRoutes = require("./routes/ai.routes");
+
 const app = express();
 
 // Basic security middleware
@@ -42,6 +45,9 @@ app.use("/api/prescriptions", prescriptionRoutes);
 
 //Medical Report routes
 app.use("/api/reports", medicalReportRoutes);
+
+// AI Doctor Chat API routes
+app.use("/api/ai", aiRoutes);
 
 // Backend health check
 app.get("/api/health", (req, res) => {

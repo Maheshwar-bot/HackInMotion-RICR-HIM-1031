@@ -4,6 +4,8 @@ const router = express.Router();
 
 const authMiddleware = require("../middleware/auth.middleware");
 
+const upload = require("../middleware/upload.middleware");
+
 const {
   uploadPrescription,
   getMyPrescriptions,
@@ -11,12 +13,15 @@ const {
   deletePrescription,
 } = require("../controllers/prescription.controller");
 
+
 // Upload prescription
 router.post(
   "/upload",
   authMiddleware,
+  upload.single("prescription"),
   uploadPrescription
 );
+
 
 // Get logged-in user's prescriptions
 router.get(
@@ -25,6 +30,7 @@ router.get(
   getMyPrescriptions
 );
 
+
 // Analyze saved prescription
 router.post(
   "/:id/analyze",
@@ -32,11 +38,13 @@ router.post(
   analyzePrescription
 );
 
+
 // Delete prescription
 router.delete(
   "/:id",
   authMiddleware,
   deletePrescription
 );
+
 
 module.exports = router;
