@@ -1415,66 +1415,415 @@ async function historyPage(){
 // PATIENT
 // =============================================================
 
-function patient(){
+// =============================================================
+// PATIENT REPORT
+// =============================================================
 
-  shell("patient-history.html",`
-
+function patient() {
+  shell("patient-history.html", `
+    
     <small>
       MY HEALTH SPACE
     </small>
 
     <h1>
-      Patient History
+      Patient Report
     </h1>
-
 
     <div class="ui-card">
 
-      <h3>
-        Current Medicines
-      </h3>
+      <div class="section-title">
+        <div>
+          <h3>
+            Medical Reports
+          </h3>
 
+          <p class="muted">
+            Upload and manage your medical reports securely.
+          </p>
+        </div>
+      </div>
 
-      ${
-        meds.length
+      <!-- Upload Medical Report -->
 
-          ? meds.map(x=>`
+      <div
+        class="ui-card"
+        style="margin-top:15px"
+      >
 
-              <div class="row">
+        <h3>
+          Upload Medical Report
+        </h3>
 
-                <span>
-                  💊
-                </span>
+        <p class="muted">
+          Upload your medical report as PDF or image.
+        </p>
 
-                <div class="grow">
+        <input
+          type="file"
+          id="medicalReportFile"
+          accept=".pdf,image/jpeg,image/png,image/jpg"
+          style="margin-top:12px"
+        >
 
-                  <b>
-                    ${esc(x)}
-                  </b>
+        <button
+          class="btn"
+          type="button"
+          style="margin-top:15px"
+          onclick="uploadMedicalReport()"
+        >
+          Upload Report
+        </button>
 
-                  <small>
-                    Current medicine
-                  </small>
+        <div
+          id="medicalReportUploadStatus"
+          style="margin-top:15px"
+        ></div>
 
-                </div>
+      </div>
 
-              </div>
+      <!-- Reports will appear here -->
 
-            `).join("")
+      <div
+        id="medicalReportsList"
+        style="margin-top:20px"
+      >
 
-          : `
+        <div class="ui-card">
+          Loading medical reports...
+        </div>
 
-              <p class="muted">
-                No medicines added yet.
-              </p>
-
-            `
-      }
+      </div>
 
     </div>
 
   `);
 
+  loadMedicalReports();
+}
+
+// =============================================================
+// LOAD MEDICAL REPORTS
+// =============================================================
+
+async function loadMedicalReports() {
+  const container =
+    document.getElementById("medicalReportsList");
+
+  if (!container) {
+    return;
+  }
+
+  try {
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      container.innerHTML = `
+        <div class="warning">
+          Authentication required. Please login again.
+        </div>
+      `;
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/reports`,
+      {
+        method: "GET",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Unable to fetch medical reports"
+      );
+    }
+
+    const reports =
+      Array.isArray(data.reports)
+        ? data.reports
+        : [];
+
+    if (!reports.length) {
+      container.innerHTML = `
+        <div class="ui-card">
+          <h3>No medical reports yet</h3>
+
+          <p class="muted">
+            Upload your first medical report above.
+          </p>
+        </div>
+      `;
+
+      return;
+    }
+
+    container.innerHTML = `
+      <h3>
+        Your Medical Reports
+      </h3>
+
+      ${reports.map(report => `
+
+        <div
+          class="ui-card"
+          style="margin-top:15px"
+        >
+
+          <div class="row">
+
+            <span>
+              📄
+            </span>
+
+            <div class="grow">
+
+              <b>
+                ${esc(
+                  report.originalName ||
+                  "Medical Report"
+                )}
+              </b>
+
+              <small>
+                ${esc(
+                  report.fileType ||
+                  "Unknown file type"
+                )}
+              </small>
+
+              <small>
+                ${new Date(
+                  report.createdAt
+                ).toLocaleString()}
+              </small>
+
+            </div>
+
+          </div>
+
+          <div
+            style="
+              display:flex;
+              gap:10px;
+              margin-top:15px;
+              flex-wrap:wrap;
+            "
+          >
+
+            <a
+              class="btn"
+              href="${esc(report.fileUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Report
+            </a>
+
+            <button
+              class="btn"
+              type="button"
+              onclick="deleteMedicalReport('${esc(
+                report._id
+              )}')"
+            >
+              Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      `).join("")}
+    `;
+
+  } catch (error) {
+
+    console.error(
+      "LOAD MEDICAL REPORTS ERROR:",
+      error
+    );
+
+    container.innerHTML = `
+      <div class="warning">
+        Unable to load medical reports.
+      </div>
+    `;
+  }
+}
+
+
+// =============================================================
+// UPLOAD MEDICAL REPORT
+// =============================================================
+
+async function uploadMedicalReport() {
+  const fileInput =
+    document.getElementById("medicalReportFile");
+
+  const status =
+    document.getElementById(
+      "medicalReportUploadStatus"
+    );
+
+  if (!fileInput || !fileInput.files.length) {
+    status.innerHTML = `
+      <div class="warning">
+        Please select a medical report first.
+      </div>
+    `;
+
+    return;
+  }
+
+  const file = fileInput.files[0];
+
+  try {
+    status.innerHTML = `
+      <div class="ui-card">
+        Uploading medical report...
+      </div>
+    `;
+
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error(
+        "Authentication required. Please login again."
+      );
+    }
+
+    const formData = new FormData();
+
+    formData.append(
+      "report",
+      file
+    );
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/reports/upload`,
+      {
+        method: "POST",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: formData,
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Medical report upload failed"
+      );
+    }
+
+    status.innerHTML = `
+      <div class="success">
+        Medical report uploaded successfully.
+      </div>
+    `;
+
+    fileInput.value = "";
+
+    await loadMedicalReports();
+
+  } catch (error) {
+
+    console.error(
+      "UPLOAD MEDICAL REPORT ERROR:",
+      error
+    );
+
+    status.innerHTML = `
+      <div class="warning">
+        ${esc(
+          error.message ||
+          "Failed to upload medical report."
+        )}
+      </div>
+    `;
+  }
+}
+
+// =============================================================
+// DELETE MEDICAL REPORT
+// =============================================================
+
+async function deleteMedicalReport(reportId) {
+  if (!reportId) {
+    return;
+  }
+
+  const confirmed = confirm(
+    "Are you sure you want to delete this medical report?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    const token =
+      localStorage.getItem("token");
+
+    if (!token) {
+      alert(
+        "Authentication required. Please login again."
+      );
+
+      return;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/reports/${reportId}`,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        "Failed to delete medical report"
+      );
+    }
+
+    await loadMedicalReports();
+
+  } catch (error) {
+
+    console.error(
+      "DELETE MEDICAL REPORT ERROR:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Failed to delete medical report."
+    );
+  }
 }
 
 
