@@ -1567,12 +1567,7 @@ function aiDoctorChatbot(){
         >
 
           <div class="chat-bubble bot">
-
-            Hi! I can help explain medicines,
-            common side effects and general
-            health information. What would
-            you like to know?
-
+            Loading previous conversation...
           </div>
 
         </div>
@@ -1613,6 +1608,156 @@ function aiDoctorChatbot(){
     </div>
 
   `);
+
+  // Load previous AI chat history
+  loadChatHistory();
+
+}
+
+// =============================================================
+// LOAD AI DOCTOR CHAT HISTORY
+// =============================================================
+
+async function loadChatHistory(){
+
+  const box =
+    document.getElementById("chatMessages");
+
+  if(!box){
+    return;
+  }
+
+  const token =
+    localStorage.getItem("token");
+
+  if(!token){
+
+    box.innerHTML = `
+      <div class="chat-bubble bot">
+        Please login first to use the AI Doctor.
+      </div>
+    `;
+
+    return;
+  }
+
+
+  try{
+
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/ai/chat/history`,
+        {
+          method:"GET",
+
+          headers:{
+            "Authorization":
+              `Bearer ${token}`
+          }
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if(
+      !response.ok ||
+      data.success===false
+    ){
+
+      throw new Error(
+        data.message ||
+        "Unable to load chat history."
+      );
+
+    }
+
+
+   const history =
+  Array.isArray(data?.data?.messages)
+    ? data.data.messages
+    : [];
+
+
+    // No previous messages
+if(history.length===0){
+
+  if(box.children.length === 0){
+
+    box.innerHTML = `
+
+      <div class="chat-bubble bot">
+
+        Hi! I can help explain medicines,
+        common side effects and general
+        health information. What would
+        you like to know?
+
+      </div>
+
+    `;
+
+  }
+
+  return;
+}
+
+
+    // Render previous messages
+    box.innerHTML =
+      history.map(item=>{
+
+        const role =
+          item.role === "user"
+            ? "user"
+            : "bot";
+
+        const content =
+          item.content ||
+          item.message ||
+          item.text ||
+          "";
+
+        return `
+
+          <div class="chat-bubble ${role}">
+            ${esc(content).replace(/\n/g,"<br>")}
+          </div>
+
+        `;
+
+      }).join("");
+
+
+    // Scroll to latest message
+    box.scrollTop =
+      box.scrollHeight;
+
+
+  }catch(error){
+
+    console.error(
+      "CHAT HISTORY FETCH ERROR:",
+      error
+    );
+
+
+    box.innerHTML = `
+
+      <div class="chat-bubble bot">
+
+        Hi! I can help explain medicines,
+        common side effects and general
+        health information. What would
+        you like to know?
+
+      </div>
+
+    `;
+
+  }
 
 }
 
