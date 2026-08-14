@@ -469,24 +469,20 @@ const getMedicineData = async (
     );
 
   // --------------------------------------------------
-  // 2. Get drug information from DailyMed
-  // --------------------------------------------------
-
-  const dailymedData =
-    await dailymedService.getDrugInfo(
+// 2 & 3. Get DailyMed + openFDA data in parallel
+// --------------------------------------------------
+const [dailymedData, openfdaData] =
+  await Promise.all([
+    dailymedService.getDrugInfo(
       rxnormData.rxcui,
       rxnormData
-    );
+    ),
 
-  // --------------------------------------------------
-  // 3. Get safety data from openFDA
-  // --------------------------------------------------
-
-  const openfdaData =
-    await openfdaService.getSafetyData(
+    openfdaService.getSafetyData(
       normalizedName,
       rxnormData
-    );
+    ),
+  ]);
 
   // --------------------------------------------------
   // 4. Normalize DailyMed
@@ -531,7 +527,8 @@ const getMedicineData = async (
 const analyzeMedicine = async (
   medicineName1,
   medicineName2,
-  mode = "normal"
+  mode = "normal",
+  language = "English"
 ) => {
   // --------------------------------------------------
   // Validate first medicine
@@ -614,10 +611,11 @@ const analyzeMedicine = async (
   // --------------------------------------------------
 
   const aiAnalysis =
-    await aiService.analyzeMedicineWithAI(
-      combinedMedicineData,
-      responseMode
-    );
+  await aiService.analyzeMedicineWithAI(
+    combinedMedicineData,
+    responseMode,
+    language
+  );
 
   // --------------------------------------------------
   // Validate structured risk level

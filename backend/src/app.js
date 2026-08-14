@@ -20,6 +20,15 @@ const medicalReportRoutes = require("./routes/medicalReport.routes");
 // AI Doctor Chat routes
 const aiRoutes = require("./routes/ai.routes");
 
+// Medicine Reminder routes
+const reminderRoutes = require("./routes/reminder.routes");
+
+// Allergy and Safety routes
+const allergyRoutes = require("./routes/allergy.routes");
+
+// Profile routes
+const profileRoutes = require("./routes/profile.routes");
+
 const app = express();
 
 // Basic security middleware
@@ -48,6 +57,15 @@ app.use("/api/reports", medicalReportRoutes);
 
 // AI Doctor Chat API routes
 app.use("/api/ai", aiRoutes);
+
+// Medicine Reminder API routes
+app.use("/api/reminders", reminderRoutes);
+
+// Allergy and Safety API routes
+app.use("/api/allergies", allergyRoutes);
+
+// Profile API routes
+app.use("/api/profile", profileRoutes);
 
 // Backend health check
 app.get("/api/health", (req, res) => {

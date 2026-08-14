@@ -145,7 +145,7 @@ const getDrugInfo = async (
     `${DAILYMED_BASE_URL}/spls.json`,
     {
       rxcui,
-      pagesize: 10,
+      pagesize: 5,
       page: 1,
     }
   );
@@ -232,45 +232,50 @@ const getDrugInfo = async (
     };
   }
 
-  // Try relevant labels
-  for (const item of relevantRecords) {
-    const record = item.record;
+ // Try only the top 2 relevant labels.
+// This prevents multiple sequential XML requests
+// while keeping a fallback if the best label fails.
+const topRelevantRecords =
+  relevantRecords.slice(0, 2);
 
-    try {
-      const xmlUrl =
-        `${DAILYMED_BASE_URL}/spls/${record.setid}.xml`;
+for (const item of topRelevantRecords) {
+  const record = item.record;
 
-      const xmlData =
-        await getDailyMedXML(xmlUrl);
+  try {
+    const xmlUrl =
+      `${DAILYMED_BASE_URL}/spls/${record.setid}.xml`;
 
-      const labelData =
-        parseXML(xmlData);
+    const xmlData =
+      await getDailyMedXML(xmlUrl);
 
-      return {
-        found: true,
+    const labelData =
+      parseXML(xmlData);
 
-        label: {
-          setid: record.setid,
-          title: record.title,
-          publishedDate:
-            record.published_date,
+    return {
+      found: true,
 
-          relevanceScore: item.score,
+      label: {
+        setid: record.setid,
+        title: record.title,
+        publishedDate:
+          record.published_date,
 
-          data: labelData,
-        },
-      };
-    } catch (error) {
-      console.warn(
-        `DailyMed label failed: ${record.setid}`
-      );
+        relevanceScore: item.score,
 
-      console.warn(
-        "Reason:",
-        error.message
-      );
-    }
+        data: labelData,
+      },
+    };
+  } catch (error) {
+    console.warn(
+      `DailyMed label failed: ${record.setid}`
+    );
+
+    console.warn(
+      "Reason:",
+      error.message
+    );
   }
+}
 
   return {
     found: false,

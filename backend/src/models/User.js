@@ -45,6 +45,28 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    age: {
+  type: Number,
+  min: 1,
+  max: 120,
+  default: null,
+},
+
+bloodGroup: {
+  type: String,
+  enum: [
+    "A+",
+    "A-",
+    "B+",
+    "B-",
+    "AB+",
+    "AB-",
+    "O+",
+    "O-",
+  ],
+  default: null,
+},
+
     lastLogin: {
       type: Date,
       default: null,

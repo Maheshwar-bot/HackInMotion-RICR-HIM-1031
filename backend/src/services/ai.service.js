@@ -25,6 +25,16 @@ const normalizeMode = (mode) => {
     : "normal";
 };
 
+const normalizeLanguage = (language) => {
+  const normalized = String(language || "English")
+    .trim()
+    .toLowerCase();
+
+  return normalized === "hindi"
+    ? "Hindi"
+    : "English";
+};
+
 const validateRiskLevel = (riskLevel) => {
   return ALLOWED_RISK_LEVELS.includes(riskLevel)
     ? riskLevel
@@ -37,9 +47,13 @@ const validateRiskLevel = (riskLevel) => {
 
 const analyzeMedicineWithAI = async (
   medicineData,
-  mode = "normal"
+  mode = "normal",
+  language = "English"
 ) => {
   const responseMode = normalizeMode(mode);
+
+  const responseLanguage =
+    normalizeLanguage(language);
 
   // --------------------------------------------------
   // System prompt
@@ -72,6 +86,25 @@ ${
     ? "EXPERT MODE - provide healthcare/professional-oriented detail."
     : "NORMAL MODE - explain information in simple patient-friendly language."
 }
+
+RESPONSE LANGUAGE:
+
+Generate the final response in ${responseLanguage}.
+
+If the selected language is Hindi:
+- Write the response in simple, natural Hindi.
+- Keep medicine names such as Paracetamol and Ibuprofen in English.
+- Keep important medical terms in English when that improves clarity.
+- Do not change the medical meaning.
+- Do not add, remove, or invent medical information.
+
+If the selected language is English:
+- Write the response in clear English.
+
+The selected language changes ONLY the wording/language.
+The underlying medical evidence, risk assessment, warnings,
+side effects, contraindications, and interaction findings
+must remain unchanged.
 
 ==================================================
 MEDICINE IDENTITY RULES
@@ -331,11 +364,7 @@ Clearly mention missing or incomplete information.
 12. MEDICAL DISCLAIMER
 Include the required disclaimer.
 
-==================================================
-FULL MEDICAL DATA
-==================================================
 
-${JSON.stringify(medicineData, null, 2)}
 `;
 
   try {
@@ -345,7 +374,7 @@ ${JSON.stringify(medicineData, null, 2)}
 
     const response =
       await ai.models.generateContent({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.1-flash-lite",
 
         contents: `
 ${systemPrompt}
@@ -527,12 +556,21 @@ Do not:
 - modify OCR dosage instructions
 - make unsupported clinical recommendations
 
-RESPONSE MODE:
+OUTPUT EFFICIENCY:
+
+- Keep the analysis focused on the requested medical information.
+- Do not repeat the same medical information in multiple sections.
+- Do not add unnecessary background explanations.
+- Do not repeat the medicine name unnecessarily.
+- Include all required evidence, warnings, side effects, contraindications,
+  interaction information, and limitations when supported by the data.
+- Do not omit medically relevant retrieved information merely to make the
+  response shorter.
 
 ${
   responseMode === "expert"
-    ? "EXPERT MODE - provide healthcare/professional-oriented detail."
-    : "NORMAL MODE - explain information in simple patient-friendly language."
+    ? "EXPERT MODE: Keep professional detail precise and avoid repetitive explanation."
+    : "NORMAL MODE: Summarize the final medical analysis into approximately 6–7 concise lines. Keep the existing patient-friendly style and include only the most important medicine purpose, key effects/side effects, important precautions, direct interaction finding if available, and when to seek medical help. Do not repeat information or add unnecessary explanation."
 }
 
 ==================================================

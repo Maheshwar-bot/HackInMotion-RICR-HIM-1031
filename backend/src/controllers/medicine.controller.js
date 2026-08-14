@@ -10,10 +10,11 @@ const searchHistoryService = require("../services/searchHistory.service");
 const analyzeMedicine = async (req, res) => {
   try {
     const {
-      medicineName1,
-      medicineName2,
-      mode = "normal",
-    } = req.body;
+  medicineName1,
+  medicineName2,
+  mode = "normal",
+  language = "English",
+} = req.body;
 
     // --------------------------------------------------
     // 1. User must be authenticated
@@ -40,11 +41,12 @@ const analyzeMedicine = async (req, res) => {
     // --------------------------------------------------
 
     const result =
-      await medicineService.analyzeMedicine(
-        medicineName1,
-        medicineName2,
-        selectedMode
-      );
+  await medicineService.analyzeMedicine(
+    medicineName1,
+    medicineName2,
+    selectedMode,
+    language
+  );
 
     // --------------------------------------------------
     // 4. Get structured risk level
@@ -88,20 +90,28 @@ const analyzeMedicine = async (req, res) => {
 
       data: result,
     });
-  } catch (error) {
-    console.error(
-      "MEDICINE CONTROLLER ERROR:"
-    );
+ } catch (error) {
+  console.error("MEDICINE CONTROLLER ERROR:");
+  console.error("Name:", error.name);
+  console.error("Message:", error.message);
+  console.error("Stack:", error.stack);
 
-    console.error(
-      error.message
-    );
-
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+  if (error.status) {
+    console.error("Status:", error.status);
   }
+
+  if (error.response?.data) {
+    console.error(
+      "Response Data:",
+      error.response.data
+    );
+  }
+
+  return res.status(400).json({
+    success: false,
+    message: error.message,
+  });
+}
 };
 
 module.exports = {
