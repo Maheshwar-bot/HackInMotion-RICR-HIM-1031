@@ -16,6 +16,237 @@ function esc(x){
   }[c]));
 }
 
+// =============================================================
+// LOAD CURRENT USER PROFILE
+// =============================================================
+
+async function loadCurrentUserProfile() {
+
+  const token =
+    localStorage.getItem("token");
+
+  // -----------------------------------------------------------
+  // Authentication check
+  // -----------------------------------------------------------
+
+  if (!token) {
+    location.href = "login.html";
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `${API_BASE_URL}/api/auth/me`,
+        {
+          method: "GET",
+
+          headers: {
+            "Authorization":
+              `Bearer ${token}`
+          }
+        }
+      );
+
+    const data =
+      await response.json();
+
+    // ---------------------------------------------------------
+    // Handle invalid / expired token
+    // ---------------------------------------------------------
+
+    if (
+      response.status === 401 ||
+      response.status === 403
+    ) {
+      logout();
+      return;
+    }
+
+    if (
+      !response.ok ||
+      data.success === false
+    ) {
+      throw new Error(
+        data.message ||
+        "Unable to load profile."
+      );
+    }
+
+    const user =
+      data.user || {};
+
+    // ---------------------------------------------------------
+    // Update profile card
+    // ---------------------------------------------------------
+
+    const name =
+      user.name || "User";
+
+    const email =
+      user.email || "Email unavailable";
+
+    const profileImage =
+      user.profileImage || "";
+
+    const authProvider =
+      user.authProvider === "google"
+        ? "Google"
+        : "Email & Password";
+
+    const verified =
+      user.isEmailVerified === true;
+
+    const avatar =
+      document.getElementById(
+        "profileAvatar"
+      );
+
+    const nameElement =
+      document.getElementById(
+        "profileName"
+      );
+
+    const emailElement =
+      document.getElementById(
+        "profileEmail"
+      );
+
+    const providerElement =
+      document.getElementById(
+        "profileProvider"
+      );
+
+    const verifiedElement =
+      document.getElementById(
+        "profileVerified"
+      );
+
+    // ---------------------------------------------------------
+    // Name
+    // ---------------------------------------------------------
+
+    if (nameElement) {
+      nameElement.textContent =
+        name;
+    }
+
+    // ---------------------------------------------------------
+    // Email
+    // ---------------------------------------------------------
+
+    if (emailElement) {
+      emailElement.textContent =
+        email;
+    }
+
+    // ---------------------------------------------------------
+    // Auth provider
+    // ---------------------------------------------------------
+
+    if (providerElement) {
+      providerElement.textContent =
+        authProvider;
+    }
+
+    // ---------------------------------------------------------
+    // Email verification
+    // ---------------------------------------------------------
+
+    if (verifiedElement) {
+
+      verifiedElement.textContent =
+        verified
+          ? "Verified"
+          : "Not verified";
+
+      verifiedElement.style.color =
+        verified
+          ? "#15803d"
+          : "#b91c1c";
+    }
+
+    // ---------------------------------------------------------
+    // Profile image / initials
+    // ---------------------------------------------------------
+
+    if (avatar) {
+
+      if (profileImage) {
+
+        avatar.innerHTML = `
+          <img
+            src="${esc(profileImage)}"
+            alt="Profile"
+            style="
+              width:100%;
+              height:100%;
+              object-fit:cover;
+              border-radius:50%;
+            "
+          >
+        `;
+
+      } else {
+
+        avatar.textContent =
+          name
+            .charAt(0)
+            .toUpperCase();
+
+      }
+    }
+
+    // ---------------------------------------------------------
+    // Keep local profile data updated
+    // ---------------------------------------------------------
+
+    localStorage.setItem(
+      "profile",
+      JSON.stringify({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profileImage:
+          user.profileImage || null
+      })
+    );
+
+  } catch (error) {
+
+    console.error(
+      "PROFILE FETCH ERROR:",
+      error
+    );
+
+    const card =
+      document.getElementById(
+        "profileError"
+      );
+
+    if (card) {
+
+      card.innerHTML = `
+        <div class="warning">
+
+          <b>
+            Unable to load profile
+          </b>
+
+          <p>
+            ${esc(
+              error.message ||
+              "Something went wrong."
+            )}
+          </p>
+
+        </div>
+      `;
+    }
+  }
+}
+
 function shell(active,body){
   const links=[
     ["home.html","⌂","Home"],
@@ -815,92 +1046,103 @@ async function check(){
 // MEDICINE ANALYSIS RESULT
 // =============================================================
 
-function renderMedicineAnalysis(data){
-
-  const result=
+function renderMedicineAnalysis(data) {
+  const result =
     document.getElementById("result");
 
-
-  const analysisData=
+  const analysisData =
     data?.data &&
-    typeof data.data==="object"
+    typeof data.data === "object"
       ? data.data
       : data || {};
 
-
-  const medicine1Data=
+  const medicine1Data =
     analysisData.medicine1 || {};
 
-  const medicine2Data=
+  const medicine2Data =
     analysisData.medicine2 || {};
 
-
-  const medicine1=
+  const medicine1 =
     medicine1Data.medicine ||
     medicine1Data.normalizedName ||
     "Medicine 1";
 
-
-  const medicine2=
+  const medicine2 =
     medicine2Data.medicine ||
     medicine2Data.normalizedName ||
     "Medicine 2";
 
-
-  const medicine1Rxcui=
+  const medicine1Rxcui =
     medicine1Data.rxcui ||
     "N/A";
 
-
-  const medicine2Rxcui=
+  const medicine2Rxcui =
     medicine2Data.rxcui ||
     "N/A";
 
-
-  const riskLevel=
+  const riskLevel =
     analysisData.riskLevel ||
     "Unable to determine";
 
-
-  const mode=
-    analysisData.mode==="expert"
+  const mode =
+    analysisData.mode === "expert"
       ? "Expert"
       : "Normal";
 
-
-  const interactionEvidence=
+  const interactionEvidence =
     analysisData.interactionEvidence || {};
 
-
-  const rawAnalysis=
+  const rawAnalysis =
     analysisData.interactionAnalysis;
 
-
-  const analysis=
-    typeof rawAnalysis==="string"
+  const analysis =
+    typeof rawAnalysis === "string"
       ? rawAnalysis
       : rawAnalysis?.analysis ||
         rawAnalysis?.explanation ||
         rawAnalysis?.summary ||
         "Information not available in the retrieved medical data.";
 
+  // =============================================================
+  // RISK LEVEL COLOR
+  // =============================================================
 
-  const directPairAvailable=
+  let riskStyle =
+    "background:#f3f4f6;color:#4b5563;border:1px solid #d1d5db;";
+
+  if (riskLevel === "Low") {
+    riskStyle =
+      "background:#dcfce7;color:#15803d;border:1px solid #86efac;";
+  }
+
+  if (riskLevel === "Moderate") {
+    riskStyle =
+      "background:#ffedd5;color:#c2410c;border:1px solid #fdba74;";
+  }
+
+  if (
+    riskLevel === "High" ||
+    riskLevel === "Critical"
+  ) {
+    riskStyle =
+      "background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;";
+  }
+
+  // =============================================================
+  // DIRECT PAIR EVIDENCE
+  // =============================================================
+
+  const directPairAvailable =
     interactionEvidence
-      .directPairEvidenceAvailable===true;
+      .directPairEvidenceAvailable === true;
 
-
-  const directPairEvidence=
+  const directPairEvidence =
     interactionEvidence.directPairEvidence;
 
+  let evidenceHTML = "";
 
-  let evidenceHTML="";
-
-
-  if(directPairAvailable){
-
-    evidenceHTML=`
-
+  if (directPairAvailable) {
+    evidenceHTML = `
       <div class="ui-card">
 
         <h3>
@@ -915,29 +1157,23 @@ function renderMedicineAnalysis(data){
         ${
           directPairEvidence
             ? `
-
               <p class="muted">
                 ${esc(
-                  typeof directPairEvidence==="string"
+                  typeof directPairEvidence === "string"
                     ? directPairEvidence
                     : JSON.stringify(
                         directPairEvidence
                       )
                 )}
               </p>
-
             `
             : ""
         }
 
       </div>
-
     `;
-
-  }else{
-
-    evidenceHTML=`
-
+  } else {
+    evidenceHTML = `
       <div class="ui-card">
 
         <h3>
@@ -957,13 +1193,75 @@ function renderMedicineAnalysis(data){
         </p>
 
       </div>
-
     `;
-
   }
 
+  // =============================================================
+  // DOCTOR / PHARMACIST ADVICE
+  // =============================================================
 
-  result.innerHTML=`
+  let medicalAdviceHTML = "";
+
+  if (
+    riskLevel === "High" ||
+    riskLevel === "Critical"
+  ) {
+    medicalAdviceHTML = `
+      <div
+        class="ui-card"
+        style="
+          margin-top:15px;
+          background:#fff1f2;
+          border:1px solid #fca5a5;
+        "
+      >
+
+        <h3 style="color:#b91c1c;">
+          Medical Attention Recommended
+        </h3>
+
+        <p>
+          Because this analysis indicates a
+          ${esc(riskLevel.toLowerCase())} risk level,
+          do not start, stop, combine, or change
+          medicines based only on this analysis.
+        </p>
+
+        <p>
+          Please consult a qualified doctor or
+          pharmacist for personalized medical advice
+          before taking or changing these medicines.
+        </p>
+
+      </div>
+    `;
+  } else {
+    medicalAdviceHTML = `
+      <div
+        class="ui-card"
+        style="margin-top:15px"
+      >
+
+        <h3>
+          Doctor / Pharmacist Advice
+        </h3>
+
+        <p class="muted">
+          This analysis is for educational and
+          informational purposes only. Consult a
+          qualified doctor or pharmacist for
+          personalized medical advice.
+        </p>
+
+      </div>
+    `;
+  }
+
+  // =============================================================
+  // FINAL RESULT UI
+  // =============================================================
+
+  result.innerHTML = `
 
     <div class="ui-card">
 
@@ -983,12 +1281,17 @@ function renderMedicineAnalysis(data){
 
         </div>
 
-        <span class="tag">
+        <span
+          class="tag"
+          style="${riskStyle}"
+        >
           ${esc(riskLevel)}
         </span>
 
       </div>
 
+
+      <!-- Risk Level -->
 
       <div
         class="ui-card"
@@ -1001,7 +1304,9 @@ function renderMedicineAnalysis(data){
 
         <p>
 
-          <strong>
+          <strong
+            style="${riskStyle}"
+          >
             ${esc(riskLevel)}
           </strong>
 
@@ -1009,6 +1314,8 @@ function renderMedicineAnalysis(data){
 
       </div>
 
+
+      <!-- AI Analysis -->
 
       <div
         class="ui-card"
@@ -1026,12 +1333,21 @@ function renderMedicineAnalysis(data){
       </div>
 
 
+      <!-- Interaction Evidence -->
+
       <div style="margin-top:15px">
 
         ${evidenceHTML}
 
       </div>
 
+
+      <!-- Doctor Advice -->
+
+      ${medicalAdviceHTML}
+
+
+      <!-- Medicine Information -->
 
       <div
         class="ui-card"
@@ -1060,10 +1376,27 @@ function renderMedicineAnalysis(data){
 
       </div>
 
+
+      <!-- General Disclaimer -->
+
+      <div
+        class="ui-card"
+        style="margin-top:15px"
+      >
+
+        <p class="muted">
+          This analysis is based on retrieved
+          medical information and is provided for
+          educational and informational purposes
+          only. It is not a diagnosis, prescription,
+          or personalized medical advice.
+        </p>
+
+      </div>
+
     </div>
 
   `;
-
 }
 
 
@@ -3725,47 +4058,117 @@ function extras(){
     );
 
 
-  }else if(path==="my-profile.html"){
+ }else if(path==="my-profile.html"){
 
-    generic(
-      "My Profile",
-      "ACCOUNT",
+  generic(
+    "My Profile",
+    "ACCOUNT",
 
-      `
+    `
 
-        <div class="ui-card">
+      <div
+        class="ui-card"
+        id="profileError"
+      >
 
-          <div class="avatar">
-            ${esc(
-              (p.name||"G")[0].toUpperCase()
-            )}
+        <!-- Profile Avatar -->
+
+        <div
+          id="profileAvatar"
+          class="avatar"
+        >
+          ${esc(
+            (p.name||"G")[0].toUpperCase()
+          )}
+        </div>
+
+
+        <!-- User Name -->
+
+        <h2 id="profileName">
+          ${esc(p.name)}
+        </h2>
+
+
+        <!-- User Email -->
+
+        <p id="profileEmail">
+          ${esc(p.email)}
+        </p>
+
+
+        <!-- Account Information -->
+
+        <div
+          class="rows"
+          style="margin-top:20px"
+        >
+
+          <!-- Authentication Provider -->
+
+          <div class="row">
+
+            <span>
+              Account
+            </span>
+
+            <div class="grow">
+
+              <b id="profileProvider">
+                Loading...
+              </b>
+
+            </div>
+
           </div>
 
-          <h2>
-            ${esc(p.name)}
-          </h2>
 
-          <p>
-            ${esc(p.email)}
-          </p>
+          <!-- Email Verification -->
 
-          <a
-            class="btn"
-            href="settings.html"
-          >
-            Settings →
-          </a>
+          <div class="row">
+
+            <span>
+              Email
+            </span>
+
+            <div class="grow">
+
+              <b id="profileVerified">
+                Loading...
+              </b>
+
+            </div>
+
+          </div>
 
         </div>
 
-      `,
 
-      "my-profile.html"
-    );
+        <!-- Settings -->
+
+        <a
+          class="btn"
+          href="settings.html"
+          style="margin-top:20px"
+        >
+          Settings →
+        </a>
+
+      </div>
+
+    `,
+
+    "my-profile.html"
+  );
 
 
-  }else if(path==="settings.html"){
+  // Load actual authenticated user
+  // from backend
 
+  loadCurrentUserProfile();
+
+
+}else if(path==="settings.html"){
     generic(
       "Settings",
       "PREFERENCES",
