@@ -14,6 +14,9 @@ const searchHistoryRoutes = require("./routes/searchHistory.routes");
 // Prescription routes
 const prescriptionRoutes = require("./routes/prescription.routes");
 
+//Medical Report routes
+const medicalReportRoutes = require("./routes/medicalReport.routes");
+
 const app = express();
 
 // Basic security middleware
@@ -36,6 +39,9 @@ app.use("/api/history", searchHistoryRoutes);
 
 // Prescription API routes
 app.use("/api/prescriptions", prescriptionRoutes);
+
+//Medical Report routes
+app.use("/api/reports", medicalReportRoutes);
 
 // Backend health check
 app.get("/api/health", (req, res) => {
