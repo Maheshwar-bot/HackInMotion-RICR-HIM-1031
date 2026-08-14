@@ -1,0 +1,120 @@
+.register-page {
+
+    padding-top: 15px;
+
+}
+
+
+.register-back {
+
+    position: absolute;
+
+    top: 24px;
+
+    left: 18px;
+
+    z-index: 10;
+
+    background: transparent;
+
+    border: none;
+
+    color: var(--primary);
+
+    cursor: pointer;
+}
+
+
+.password-info {
+
+    min-height: 42px;
+
+    padding:
+        0
+        13px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #e9f8f5,
+            #effaf7
+        );
+
+    border-radius: 11px;
+
+    color: #16796a;
+
+    font-size: 11px;
+
+    font-weight: 600;
+}
+
+
+.password-info svg {
+
+    width: 18px;
+
+}
+
+
+.login-link {
+
+    text-align: center;
+
+    color: var(--text-secondary);
+
+    font-size: 13px;
+}
+
+
+.login-link a {
+
+    text-decoration: none;
+
+    color: var(--primary);
+
+    font-weight: 700;
+}
+
+
+.medicine-decoration {
+
+    margin-top: 28px;
+
+    text-align: center;
+
+    font-size: 38px;
+
+    color: var(--primary);
+}
+
+
+.medicine-decoration span {
+
+    display: inline-flex;
+
+    margin:
+
+        0
+        10px;
+
+    width: 70px;
+
+    height: 70px;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background: var(--primary);
+
+    color: white;
+}

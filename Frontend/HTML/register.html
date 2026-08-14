@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Create Account
+    </title>
+
+
+    <link
+        rel="stylesheet"
+        href="../CSS/utility.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="../CSS/register.css"
+    >
+
+
+    <script
+        src="https://unpkg.com/lucide@latest">
+    </script>
+
+</head>
+
+
+<body>
+
+<div class="mobile-app">
+
+
+    <button
+        class="register-back"
+        onclick="window.location.href='login.html'"
+    >
+
+        <i data-lucide="arrow-left"></i>
+
+    </button>
+
+
+    <main class="auth-wrapper register-page">
+
+
+        <!-- Logo -->
+
+        <section class="auth-logo-section">
+
+            <div class="brand-logo auth-big-logo">
+                +
+            </div>
+
+
+            <div class="auth-brand">
+
+                Medi<span>Safe</span>
+
+            </div>
+
+
+            <p class="auth-subtitle">
+
+                Medicine Safety Assistant
+
+            </p>
+
+        </section>
+
+
+
+        <h1 class="auth-title">
+
+            Create Account
+
+        </h1>
+
+
+        <p class="auth-description">
+
+            Join MediSafe for safer medicines
+
+        </p>
+
+
+
+        <form
+            class="auth-form"
+            id="registerForm"
+        >
+
+
+            <div class="input-box">
+
+                <i data-lucide="user"></i>
+
+                <input
+                    type="text"
+                    id="name"
+                    placeholder="Name"
+                    required
+                >
+
+            </div>
+
+
+
+            <div class="input-box">
+
+                <i data-lucide="mail"></i>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter email"
+                    required
+                >
+
+            </div>
+
+
+
+            <div class="input-box">
+
+                <i data-lucide="lock-keyhole"></i>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter password"
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    id="registerEye"
+                >
+
+                    <i data-lucide="eye"></i>
+
+                </button>
+
+            </div>
+
+
+
+            <div class="password-info">
+
+                <i data-lucide="shield-check"></i>
+
+                Password must be at least 6 characters
+
+            </div>
+
+
+
+            <button
+                type="submit"
+                class="primary-btn"
+            >
+
+                Create Account
+
+            </button>
+
+        </form>
+
+
+
+        <div class="or-divider">
+
+            OR
+
+        </div>
+
+
+
+        <p class="login-link">
+
+            Already have an account?
+
+            <a href="login.html">
+
+                Login
+
+            </a>
+
+        </p>
+
+
+        <!-- Decorative medicine illustration -->
+
+        <div class="medicine-decoration">
+
+            💊
+
+            <span>✚</span>
+
+            💊
+
+        </div>
+
+
+    </main>
+
+</div>
+
+
+<script src="js/register.js"></script>
+
+</body>
+
+</html>
