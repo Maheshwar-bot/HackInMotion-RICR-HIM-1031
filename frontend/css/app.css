@@ -1,0 +1,603 @@
+.app-shell{min-height:100vh;display:grid;grid-template-columns:235px 1fr}.side{background:white;border-right:1px solid var(--line);padding:25px 15px;position:sticky;top:0;height:100vh}.side nav{display:grid;gap:5px;margin-top:30px}.side nav a{padding:12px;border-radius:12px;color:var(--muted);font-size:13px}.side nav a.active,.side nav a:hover{background:#e8f3e2;color:var(--g);font-weight:800}.main{min-width:0}.head{height:72px;background:#ffffffdd;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 5%;position:sticky;top:0;z-index:5}.avatar{width:40px;height:40px;border-radius:50%;background:#dcebd5;color:var(--g);display:grid;place-items:center;font-weight:800}.content{width:min(980px,92%);margin:auto;padding:30px 0 80px}.app-hero{padding:25px;border-radius:28px;background:linear-gradient(135deg,#e6f2df,#f7f5e6);border:1px solid white;min-height:250px;position:relative;overflow:hidden}.app-hero h1{font-size:35px;max-width:500px}.app-hero p{max-width:520px;color:var(--muted);line-height:1.6}.capsule{position:absolute;right:12%;top:20px;width:85px;height:190px;border-radius:50px;transform:rotate(30deg);background:linear-gradient(#f8fff5 49%,#5c9e50 50%);box-shadow:0 25px 50px #315d3820}.section{margin-top:25px}.section-title{display:flex;justify-content:space-between;align-items:center}.section-title h2{font-size:19px}.section-title a{font-size:12px;color:var(--g);font-weight:800}.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.tile{padding:16px;border-radius:19px;border:1px solid var(--line);min-height:125px;display:flex;flex-direction:column;justify-content:space-between}.tile:nth-child(1){background:#e8f3e1}.tile:nth-child(2){background:#e7f1f4}.tile:nth-child(3){background:#f7f0df}.tile:nth-child(4){background:#eee9f5}.icon{width:38px;height:38px;border-radius:12px;background:#ffffffaa;display:grid;place-items:center}.tile strong,.tile small{display:block}.tile small{color:var(--muted);font-size:10px}.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.ui-card,.list,.tool{background:white;border:1px solid var(--line);border-radius:20px;padding:20px}.medicine{min-height:145px}.pill-icon{font-size:25px}.search{display:flex;background:white;border:1px solid var(--line);padding:6px;border-radius:15px;margin:20px 0}.search input{flex:1;border:0;outline:0;padding:12px}.search button{border:0;background:var(--g);color:#fff;border-radius:11px;padding:10px 15px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px}.rows{display:grid;gap:10px}.row{display:flex;align-items:center;gap:13px;padding:14px;background:white;border:1px solid var(--line);border-radius:16px}.row .grow{flex:1}.tag{padding:6px 9px;border-radius:99px;background:#e8f3e2;color:var(--g);font-size:10px;font-weight:800}.warning{padding:15px;border-radius:15px;background:#fff1e1;border:1px solid #efd3a7}.danger{background:#ffeded;border-color:#efc2be}.success{background:#e8f4e3;border-color:#cee3c7}.mobile-nav{display:none}@media(max-width:800px){.app-shell{grid-template-columns:1fr}.side{position:fixed;left:-250px;width:235px;z-index:20;transition:.2s}.side.open{left:0;box-shadow:20px 0 50px #17312320}.menu{display:block}.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:64px;background:#fffffff5;border-top:1px solid var(--line);z-index:15;justify-content:space-around}.mobile-nav a{font-size:10px;display:grid;place-items:center;color:var(--muted)}.mobile-nav a.active{color:var(--g);font-weight:800}.content{width:calc(100% - 28px);padding-top:22px}.tiles{grid-template-columns:1fr 1fr}.card-grid{grid-template-columns:1fr 1fr}.app-hero{min-height:290px}.capsule{right:-2%;opacity:.75}.form-grid{grid-template-columns:1fr}}@media(max-width:430px){.card-grid{grid-template-columns:1fr}.app-hero h1{font-size:29px}.tiles{gap:8px}.tile{min-height:110px;padding:13px}}
+/* App-first navigation: keep the primary sidebar intentionally minimal */
+.side{width:250px}
+.side nav{display:grid;gap:6px;margin-top:32px}
+.side nav a{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:15px;color:#627066;font-size:14px}
+.side nav a.active,.side nav a:hover{background:#e7f2e1;color:var(--g);font-weight:700}
+.side nav a span{white-space:nowrap}
+.side-profile{margin-top:auto;border-top:1px solid var(--line);padding-top:14px}
+.side-profile a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px}
+.side-profile a:hover{background:#f1f6ed}
+.side-avatar{width:38px;height:38px;border-radius:50%;background:#dcebd3;color:var(--g);display:grid;place-items:center;font-weight:800}
+.side-profile b,.side-profile small{display:block}
+.side-profile b{font-size:12px}.side-profile small{font-size:10px;color:var(--muted);margin-top:2px}
+.profile-chip{display:flex;align-items:center;gap:8px}
+.profile-name{font-size:12px;color:#4d5f53}
+.head-spacer{flex:1}
+.home-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.home-top small{letter-spacing:1.7px;font-weight:800;color:var(--g);font-size:10px}
+.home-top h1{font-size:30px;margin:5px 0 3px;letter-spacing:-.8px}
+.home-top p{margin:0;color:var(--muted);font-size:12px}
+.home-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#dcebd3;color:var(--g);font-weight:800;border:3px solid #fff;box-shadow:0 8px 20px #245f3014}
+.app-home{max-width:960px;margin:auto}
+.app-hero{position:relative;overflow:hidden;min-height:275px;border-radius:28px;padding:27px;background:linear-gradient(135deg,#e7f3df,#f8f6e9 58%,#e1eee3);border:1px solid #fff;box-shadow:0 18px 45px #245f3012}
+.hero-content{position:relative;z-index:2;max-width:520px}
+.hero-badge{font-size:9px;letter-spacing:1.4px;font-weight:800;color:var(--g)}
+.app-hero h2{font-size:33px;line-height:1.05;letter-spacing:-1.2px;margin:13px 0 9px}
+.app-hero h2 span{color:var(--g)}
+.app-hero p{font-size:13px;color:#607064;line-height:1.55;max-width:430px;margin-bottom:17px}
+.app-hero .btn{padding:12px 16px}
+.capsule{position:absolute;width:75px;height:195px;border-radius:50px;right:12%;top:35px;transform:rotate(28deg);background:linear-gradient(90deg,#d9edcd,#5b9f52 50%,#d7ebcc);box-shadow:0 28px 45px #245f3030;overflow:hidden}
+.capsule:before{content:"";position:absolute;left:12px;top:10px;width:40px;height:170px;border-radius:30px;background:#ffffff66}
+.capsule:after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:#2f713a42}
+.main-tiles{grid-template-columns:repeat(4,1fr)}
+.tile-green{background:#e8f3e1}.tile-blue{background:#e7f1f4}.tile-cream{background:#f7f1df}.tile-lilac{background:#eee9f5}
+.tool-pills{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.tool-pills a{padding:14px 12px;border:1px solid var(--line);background:#fff;border-radius:15px;font-size:12px;font-weight:700;color:#56665b;text-align:center}
+.tool-pills a:hover{color:var(--g);background:#edf6e9}
+.cabinet-mini{display:flex;align-items:center;gap:13px}
+.cabinet-mini .pill-icon{width:48px;height:48px;flex:0 0 48px}
+.cabinet-mini p{font-size:11px;color:var(--muted);margin:4px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cabinet-mini>a{color:var(--g);font-size:18px}
+.chat-card{max-width:760px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:17px;box-shadow:0 14px 40px #245f3010}
+.chat-intro{display:flex;align-items:center;gap:10px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+.chat-logo{width:42px;height:42px;border-radius:14px;background:#e7f2e1;color:var(--g);display:grid;place-items:center;font-size:20px}
+.chat-intro b,.chat-intro small{display:block}.chat-intro b{font-size:13px}.chat-intro small{font-size:10px;color:var(--muted);margin-top:3px}
+.chat-messages{min-height:350px;max-height:55vh;overflow:auto;padding:15px 4px;display:flex;flex-direction:column;gap:10px}
+.chat-bubble{max-width:82%;padding:12px 14px;border-radius:16px;font-size:12px;line-height:1.5}
+.chat-bubble.bot{background:#eef5ea;color:#314936;border-bottom-left-radius:5px}
+.chat-bubble.user{background:#2f7d3b;color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+.chat-input{display:flex;gap:8px;border-top:1px solid var(--line);padding-top:13px}
+.chat-input input{flex:1;min-width:0;border:1px solid var(--line);border-radius:14px;padding:13px;outline:0}
+.chat-input .btn{padding:11px 15px}
+.chat-disclaimer{font-size:9px;line-height:1.45;margin:10px 2px 0}
+@media(max-width:900px){
+ .side{width:235px}
+ .main-tiles{grid-template-columns:repeat(2,1fr)}
+ .tool-pills{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:650px){
+ .side{position:fixed;left:-260px;top:0;bottom:0;height:100vh;z-index:20;transition:.22s;box-shadow:none}
+ .side.open{left:0;box-shadow:20px 0 50px #17312325}
+ .side nav{margin-top:25px}
+ .side nav a{padding:12px}
+ .side-profile{display:block}
+ .profile-name{display:none}
+ .head{height:64px}
+ .content{width:calc(100% - 26px);padding:22px 0 90px}
+ .home-top h1{font-size:27px}
+ .app-hero{min-height:310px;padding:22px;border-radius:24px}
+ .app-hero h2{font-size:28px}
+ .capsule{right:-4%;top:83px;opacity:.78;transform:rotate(28deg) scale(.78)}
+ .hero-content{max-width:78%}
+ .main-tiles{grid-template-columns:1fr 1fr}
+ .tool-pills{grid-template-columns:1fr 1fr}
+ .mobile-nav{display:grid!important;grid-template-columns:repeat(5,1fr)!important}
+ .mobile-nav a{font-size:16px}
+ .mobile-nav small{font-size:9px}
+ .chat-messages{min-height:320px}
+}
+@media(max-width:390px){
+ .main-tiles{gap:8px}
+ .tile{padding:13px}
+ .tile strong{font-size:12px}
+ .tile small{font-size:9px}
+ .tool-pills{gap:7px}
+ .tool-pills a{padding:12px 7px;font-size:10px}
+ .app-hero h2{font-size:26px}
+ .hero-content{max-width:82%}
+}
+
+/* Profile dropdown — keeps logout inside the profile menu */
+.profile-menu{position:relative}
+.profile-chip{border:0;background:transparent;cursor:pointer;padding:4px;border-radius:14px}
+.profile-chip:hover{background:#f0f6ec}
+.profile-dropdown{display:none;position:absolute;right:0;top:52px;width:190px;background:#fff;border:1px solid var(--line);border-radius:17px;padding:7px;box-shadow:0 18px 45px rgba(23,49,35,.14);z-index:50}
+.profile-dropdown.show{display:grid}
+.profile-dropdown a,.profile-dropdown button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:11px 12px;border-radius:11px;color:#536257;text-align:left;font-size:13px}
+.profile-dropdown a:hover,.profile-dropdown button:hover{background:#edf5e8;color:var(--g)}
+.profile-dropdown button{color:#a2473f}
+@media(max-width:650px){.profile-name{display:none}.profile-dropdown{right:0;top:48px}}
+/* No hamburger/menu button: mobile navigation is the 5-item bottom bar. */
+.menu{display:none!important}
+
+/* ==============================
+   Settings - Logout Button
+================================ */
+
+.settings-logout-section {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #e8eaed;
+}
+
+.settings-logout-btn {
+    width: 100%;
+    padding: 14px 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    background: #fff5f5;
+    color: #dc3545;
+
+    border: 1px solid #ffd6d9;
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.settings-logout-btn:hover {
+    background: #ffe8e8;
+    border-color: #ffbfc4;
+}
+
+.settings-logout-btn:active {
+    transform: scale(0.99);
+}
+
+
+/* =========================================
+   APP ANIMATIONS
+========================================= */
+
+/* Main page content entrance */
+.content {
+    animation: contentEnter 0.4s ease-out;
+}
+
+@keyframes contentEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Cards */
+.tile,
+.ui-card,
+.list,
+.tool,
+.row,
+.chat-card,
+.app-hero {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.tile:hover,
+.ui-card:hover,
+.tool:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(23, 49, 35, 0.08);
+}
+
+
+/* Sidebar navigation */
+.side nav a {
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.side nav a:hover {
+    transform: translateX(3px);
+}
+
+
+/* Tool links */
+.tool-pills a {
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.tool-pills a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(23, 49, 35, 0.07);
+}
+
+
+/* Profile avatar */
+.home-avatar,
+.avatar,
+.side-avatar {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.home-avatar:hover,
+.avatar:hover,
+.side-avatar:hover {
+    transform: scale(1.06);
+}
+
+
+/* Profile dropdown opening */
+.profile-dropdown.show {
+    animation: dropdownOpen 0.2s ease-out;
+    transform-origin: top right;
+}
+
+@keyframes dropdownOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* Medicine capsule subtle animation */
+.capsule {
+    animation: capsuleFloat 4s ease-in-out infinite;
+}
+
+@keyframes capsuleFloat {
+    0%,
+    100% {
+        margin-top: 0;
+    }
+
+    50% {
+        margin-top: -8px;
+    }
+}
+
+/* =========================================
+   AI DOCTOR CHATBOT - THREE DOT MENU
+========================================= */
+
+.chat-intro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-intro-info {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.chat-more-btn {
+    width: 40px;
+    height: 40px;
+
+    margin-left: auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f4f8f5;
+
+    border: 1px solid #e2ebe4;
+    border-radius: 12px;
+
+    color: var(--g);
+
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.chat-more-btn:hover {
+    background: #eaf4ec;
+    border-color: #cfe2d2;
+
+    box-shadow:
+        0 6px 16px rgba(33, 92, 48, 0.08);
+
+    transform: translateY(-1px);
+}
+
+.chat-more-btn:active {
+    transform: scale(0.96);
+}
+
+
+/* Mobile */
+@media (max-width: 600px) {
+
+    .chat-more-btn {
+        width: 36px;
+        height: 36px;
+
+        border-radius: 10px;
+
+        font-size: 20px;
+    }
+
+}
+
+/* =========================================
+   MEDICINE ANALYSIS - SKELETON LOADING
+========================================= */
+
+.medicine-analysis-skeleton {
+    margin-top: 4px;
+    padding: 20px;
+
+    background: #ffffff;
+    border: 1px solid #e7ece8;
+    border-radius: 18px;
+}
+
+
+/* Header */
+
+.skeleton-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+
+/* Cards */
+
+.skeleton-card {
+    padding: 18px;
+    margin-top: 14px;
+
+    background: #f9fbf9;
+
+    border: 1px solid #edf1ee;
+    border-radius: 14px;
+}
+
+
+/* Skeleton elements */
+
+.skeleton-line,
+.skeleton-badge {
+    position: relative;
+    overflow: hidden;
+
+    background: #e9eeea;
+    border-radius: 7px;
+}
+
+
+/* Shimmer animation */
+
+.skeleton-line::after,
+.skeleton-badge::after {
+    content: "";
+
+    position: absolute;
+    top: 0;
+    left: -100%;
+
+    width: 100%;
+    height: 100%;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.75),
+        transparent
+    );
+
+    animation: medicineSkeletonShimmer 1.4s infinite;
+}
+
+
+@keyframes medicineSkeletonShimmer {
+
+    100% {
+        left: 100%;
+    }
+
+}
+
+
+/* Different skeleton sizes */
+
+.skeleton-small {
+    width: 90px;
+    height: 9px;
+
+    margin-bottom: 9px;
+}
+
+.skeleton-title {
+    width: 220px;
+    height: 22px;
+}
+
+.skeleton-heading {
+    width: 135px;
+    height: 15px;
+
+    margin-bottom: 16px;
+}
+
+.skeleton-text {
+    width: 100%;
+    height: 11px;
+
+    margin-top: 10px;
+}
+
+.skeleton-text.medium {
+    width: 72%;
+}
+
+.skeleton-text.short {
+    width: 45%;
+}
+
+.skeleton-badge {
+    width: 75px;
+    height: 28px;
+
+    border-radius: 20px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .medicine-analysis-skeleton {
+        padding: 15px;
+    }
+
+    .skeleton-card {
+        padding: 15px;
+    }
+
+    .skeleton-title {
+        width: 170px;
+    }
+
+    .skeleton-badge {
+        width: 60px;
+    }
+
+}
+
+/* =========================================
+   MY PROFILE - EDIT CONTROLS
+========================================= */
+
+.profile-avatar-wrap {
+    position: relative;
+    width: fit-content;
+    margin-bottom: 14px;
+}
+
+
+/* Common edit icon */
+
+.profile-edit-icon {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid #dbe8dd;
+    border-radius: 10px;
+
+    background: #f4f8f5;
+    color: var(--g);
+
+    font-size: 15px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.profile-edit-icon:hover {
+    background: #e9f4eb;
+    border-color: #c9ddcc;
+
+    box-shadow:
+        0 5px 14px rgba(35, 91, 48, 0.08);
+
+    transform: translateY(-1px);
+}
+
+
+.profile-edit-icon:active {
+    transform: scale(0.95);
+}
+
+
+/* Profile picture edit button */
+
+.profile-photo-edit {
+    position: absolute;
+
+    right: -4px;
+    bottom: -4px;
+
+    width: 32px;
+    height: 32px;
+
+    border-radius: 50%;
+
+    background: var(--g);
+    color: #ffffff;
+
+    border: 3px solid #ffffff;
+
+    box-shadow:
+        0 4px 12px rgba(28, 82, 41, 0.18);
+}
+
+
+.profile-photo-edit:hover {
+    background: var(--g);
+    color: #ffffff;
+
+    transform: scale(1.05);
+}
+
+
+/* Profile information rows */
+
+.profile-info-row {
+    min-height: 58px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .profile-edit-icon {
+        width: 32px;
+        height: 32px;
+
+        font-size: 14px;
+    }
+
+}
