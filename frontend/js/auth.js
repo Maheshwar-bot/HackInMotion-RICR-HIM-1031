@@ -55,184 +55,6 @@ const loginAfterSignupVerification = async (email, password) => {
   return data;
 };
 
-// =============================================================
-// GOOGLE LOGIN SUCCESS
-// =============================================================
-
-if (
-  location.pathname.includes(
-    "google-login-success.html"
-  )
-) {
-
-  const params =
-    new URLSearchParams(
-      location.search
-    );
-
-  const token =
-    params.get("token");
-
-  const msg =
-    document.getElementById("msg");
-
-
-  if (!token) {
-
-    if (msg) {
-      msg.textContent =
-        "Google login failed. Authentication token was not received.";
-    }
-
-    setTimeout(() => {
-      location.href =
-        "login.html?google=missing-token";
-    }, 1500);
-
-  } else {
-
-    try {
-
-      // Save JWT received from backend
-      localStorage.setItem(
-        "token",
-        token
-      );
-
-
-      // Fetch authenticated user
-      const response =
-        await fetch(
-          `${API_BASE_URL}/api/auth/me`,
-          {
-            method: "GET",
-
-            headers: {
-              "Authorization":
-                `Bearer ${token}`
-            }
-          }
-        );
-
-
-      const data =
-        await response.json();
-
-
-      if (
-        !response.ok ||
-        !data.success ||
-        !data.user
-      ) {
-
-        throw new Error(
-          data.message ||
-          "Unable to fetch Google account."
-        );
-
-      }
-
-
-      // Save user data exactly like normal login
-      localStorage.setItem(
-        "user",
-        JSON.stringify(
-          data.user
-        )
-      );
-
-
-      localStorage.setItem(
-        "profile",
-        JSON.stringify({
-          name:
-            data.user.name ||
-            data.user.email
-              ?.split("@")[0] ||
-            "User",
-
-          email:
-            data.user.email || "",
-
-          id:
-            data.user.id ||
-            data.user._id ||
-            null,
-
-          profileImage:
-            data.user.profileImage ||
-            ""
-        })
-      );
-
-
-      localStorage.setItem(
-        "medisafe_verified",
-        "1"
-      );
-
-
-      if (msg) {
-
-        msg.textContent =
-          "Google login successful. Opening MediSafe...";
-
-      }
-
-
-      // Remove token from address bar
-      // before going to home
-      setTimeout(() => {
-
-        location.replace(
-          "home.html"
-        );
-
-      }, 400);
-
-
-    } catch (error) {
-
-      console.error(
-        "Google login success error:",
-        error
-      );
-
-
-      localStorage.removeItem(
-        "token"
-      );
-
-      localStorage.removeItem(
-        "user"
-      );
-
-      localStorage.removeItem(
-        "profile"
-      );
-
-
-      if (msg) {
-
-        msg.textContent =
-          error.message ||
-          "Google login failed.";
-
-      }
-
-
-      setTimeout(() => {
-
-        location.href =
-          "login.html?google=error";
-
-      }, 1500);
-
-    }
-
-  }
-
-}
 
 // =============================================================
 // CREATE ACCOUNT + LOGIN
@@ -717,23 +539,23 @@ if (otpForm) {
   }
 }
 
-// =============================================================
-// GOOGLE LOGIN
-// =============================================================
+// // =============================================================
+// // GOOGLE LOGIN
+// // =============================================================
 
-const googleLoginButton =
-  document.querySelector(".google-login-btn");
+// const googleLoginButton =
+//   document.querySelector(".google-login-btn");
 
-if (googleLoginButton) {
+// if (googleLoginButton) {
 
-  googleLoginButton.addEventListener(
-    "click",
-    () => {
+//   googleLoginButton.addEventListener(
+//     "click",
+//     () => {
 
-      window.location.href =
-        `${API_BASE_URL}/api/auth/google`;
+//       window.location.href =
+//         `${API_BASE_URL}/api/auth/google`;
 
-    }
-  );
+//     }
+//   );
 
-}
+// }
