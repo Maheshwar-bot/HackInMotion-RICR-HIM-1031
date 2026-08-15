@@ -36,3 +36,8 @@ Language, Reminders and Allergies are grouped inside Settings, while medicine/OC
 - OTP screen shows the email being verified.
 - Profile dropdown still contains My Profile, Settings and Log out.
 >>>>>>> b8be668 (feat: connect normal medicine analysis with backend)
+>>>>>>
+>>>>>>User one saratkartarun@gmail.com and pass is New@1234
+>>>>>>User two is spideycodelab@gmail.com pass is 11111111
+>>>>>>
+>>>>>>and the Live URL is https://medisafeai.netlify.app
