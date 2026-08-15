@@ -12,10 +12,7 @@
   <div><h1>Welcome back,<br><em>let's keep you safe.</em></h1><p>Login to your personal medicine space.</p></div>
 </section>
 <section class="form">
-  <a class="auth-home-link" href="../index.html">← Home</a>
   <div class="card auth-card">
-    <div class="auth-type-pill">LOGIN</div>
-    <div class="logo">♡</div>
     <h2>Welcome Back</h2>
     <p class="auth-subtitle">Enter your account details to continue.</p>
     <form id="authForm">
@@ -23,7 +20,26 @@
       <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
       <label>Password</label>
       <input id="password" type="password" autocomplete="current-password" required placeholder="Enter your password">
+      
+
+<div class="forgot-password-row">
+    <a href="forgot-password.html">Forgot Password?</a>
+</div>
+
       <button class="btn full auth-special-btn" type="submit">Login to MediSafe <span>→</span></button>
+
+      <div class="auth-divider">
+    <span>or continue with</span>
+</div>
+
+<button
+    type="button"
+    class="google-login-btn"
+>
+    <span class="google-icon">G</span>
+    Continue with Google
+</button>
+
     </form>
     <div id="msg"></div>
     <div class="auth-switch">

@@ -933,21 +933,59 @@ async function check(){
   }
 
 
-  result.innerHTML=`
+result.innerHTML = `
 
-    <div class="ui-card">
+  <div class="medicine-analysis-skeleton">
 
-      <b>
-        Analysing medicines...
-      </b>
+    <!-- Skeleton Header -->
+    <div class="skeleton-header">
 
-      <p class="muted">
-        Retrieving verified medicine information.
-      </p>
+      <div>
+        <div class="skeleton-line skeleton-small"></div>
+        <div class="skeleton-line skeleton-title"></div>
+      </div>
+
+      <div class="skeleton-badge"></div>
 
     </div>
 
-  `;
+
+    <!-- Skeleton Result Card -->
+    <div class="skeleton-card">
+
+      <div class="skeleton-line skeleton-heading"></div>
+
+      <div class="skeleton-line skeleton-text"></div>
+      <div class="skeleton-line skeleton-text short"></div>
+
+    </div>
+
+
+    <!-- Skeleton Analysis Card -->
+    <div class="skeleton-card">
+
+      <div class="skeleton-line skeleton-heading"></div>
+
+      <div class="skeleton-line skeleton-text"></div>
+      <div class="skeleton-line skeleton-text"></div>
+      <div class="skeleton-line skeleton-text medium"></div>
+
+    </div>
+
+
+    <!-- Skeleton Information Card -->
+    <div class="skeleton-card">
+
+      <div class="skeleton-line skeleton-heading"></div>
+
+      <div class="skeleton-line skeleton-text"></div>
+      <div class="skeleton-line skeleton-text short"></div>
+
+    </div>
+
+  </div>
+
+`;
 
 
   try{
@@ -2220,27 +2258,36 @@ function aiDoctorChatbot(){
       </div>
 
 
-      <div class="chat-card">
+      <div class="chat-intro">
 
-        <div class="chat-intro">
+  <span class="chat-logo">
+    ✦
+  </span>
 
-          <span class="chat-logo">
-            ✦
-          </span>
+  <div class="chat-intro-info">
 
-          <div>
+    <b>
+      MediSafe AI Assistant
+    </b>
 
-            <b>
-              MediSafe AI Assistant
-            </b>
+    <small>
+      Informational support • Not a diagnosis
+    </small>
 
-            <small>
-              Informational support • Not a diagnosis
-            </small>
+  </div>
 
-          </div>
 
-        </div>
+  <!-- Previous Chats Menu -->
+  <button
+    type="button"
+    class="chat-more-btn"
+    aria-label="Previous chats"
+    title="Previous chats"
+  >
+    ⋮
+  </button>
+
+</div>
 
 
         <div
@@ -4073,14 +4120,27 @@ function extras(){
 
         <!-- Profile Avatar -->
 
-        <div
-          id="profileAvatar"
-          class="avatar"
-        >
-          ${esc(
-            (p.name||"G")[0].toUpperCase()
-          )}
-        </div>
+        <div class="profile-avatar-wrap">
+
+  <div
+    id="profileAvatar"
+    class="avatar"
+  >
+    ${esc(
+      (p.name||"G")[0].toUpperCase()
+    )}
+  </div>
+
+  <button
+    type="button"
+    class="profile-edit-icon profile-photo-edit"
+    aria-label="Edit profile picture"
+    title="Edit profile picture"
+  >
+    ✎
+  </button>
+
+</div>
 
 
         <!-- User Name -->
@@ -4142,7 +4202,52 @@ function extras(){
           </div>
 
         </div>
+      <!-- Age -->
 
+<div class="row profile-info-row">
+
+  <span>
+    Age
+  </span>
+
+  <div class="grow">
+    <b>Not added</b>
+  </div>
+
+  <button
+    type="button"
+    class="profile-edit-icon"
+    aria-label="Edit age"
+    title="Edit age"
+  >
+    ✎
+  </button>
+
+</div>
+
+
+<!-- Blood Group -->
+
+<div class="row profile-info-row">
+
+  <span>
+    Blood Group
+  </span>
+
+  <div class="grow">
+    <b>Not added</b>
+  </div>
+
+  <button
+    type="button"
+    class="profile-edit-icon"
+    aria-label="Edit blood group"
+    title="Edit blood group"
+  >
+    ✎
+  </button>
+
+</div>
 
         <!-- Settings -->
 
@@ -4295,29 +4400,6 @@ function extras(){
           </div>
 
 
-          <div class="row">
-
-            🔒
-
-            <div class="grow">
-
-              <b>
-                Privacy
-              </b>
-
-              <small>
-                Private health data
-              </small>
-
-            </div>
-
-            <span class="tag">
-              Protected
-            </span>
-
-          </div>
-
-
           <a
             class="row"
             href="my-profile.html"
@@ -4340,6 +4422,19 @@ function extras(){
             <span>›</span>
 
           </a>
+
+        </div>
+
+        <!-- Logout Button -->
+        <div class="settings-logout-section">
+
+          <button
+            type="button"
+            class="settings-logout-btn"
+          >
+            <span>↪</span>
+            Logout
+          </button>
 
         </div>
 
